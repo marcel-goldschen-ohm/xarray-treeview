@@ -22,6 +22,10 @@ class XarrayTreeNode():
         # attach to tree
         self.parent = parent
     
+    def __del__(self) -> None:
+        # detach from tree
+        self.parent = None
+    
     @property
     def name(self) -> str:
         return self._name
@@ -85,7 +89,7 @@ class XarrayTreeNode():
                     if (old_name in ds.data_vars) or (old_name in ds.coords):
                         if (new_name in ds.data_vars) or (new_name in ds.coords):
                             raise Exception('XarrayTreeNode.rename_vars: Failed due to name overlap.')
-            node = node.next_node_depth_first()
+            node = node.next_depth_first()
         # perform name changes
         node: XarrayTreeNode = self
         while node is not None:
@@ -97,13 +101,11 @@ class XarrayTreeNode():
                         node_name_dict[old_name] = new_name
                 if node_name_dict:
                     node.dataset = ds.rename_vars(node_name_dict)
-            node = node.next_node_depth_first()
+            node = node.next_depth_first()
     
     # datatree compatibility
 
     def to_datatree(self, parent: xt.DataTree | None = None) -> xt.DataTree:
-        if xt is None:
-            return
         node: xt.DataTree = xt.DataTree(name=self.name, data=self.dataset, parent=parent)
         for child in self.children.values():
             child.to_datatree(node)
@@ -186,25 +188,41 @@ class XarrayTreeNode():
         while node is not None:
             ds: xr.Dataset = node.dataset
             if (ds is not None) and (name in ds.coords):
-                    coord: xr.DataArray = ds.coords[name]
-                    for dim in coord.dims:
-                        if coord.sizes[dim] != self.dataset.sizes[dim]:
-                            return xr.DataArray(dims=(name,), data=np.arange(self.dataset.dims[name]))
-                    return coord
+                coord: xr.DataArray = ds.coords[name]
+                for dim in coord.dims:
+                    if coord.sizes[dim] != self.dataset.sizes[dim]:
+                        return xr.DataArray(dims=(name,), data=np.arange(self.dataset.dims[name]))
+                return coord
             node = node.parent
         return xr.DataArray(dims=(name,), data=np.arange(self.dataset.dims[name]))
     
     def inherited_coords(self) -> dict[str, xr.DataArray]:
         """ Return dict of coords (inherited if needed) for all dims in this node.
         """
-        coords: dict = {}
+        coords: dict[str, xr.DataArray] = {}
         ds: xr.Dataset = self.dataset
+        if ds is None:
+            return coords
         for dim in ds.dims:
             if dim in ds.coords:
                 coords[dim] = ds.coords[dim]
             else:
                 coords[dim] = self.inherited_coord(dim)
         return coords
+    
+    def ensure_all_coords_defined(self) -> None:
+        ds: xr.Dataset = self.dataset
+        if ds is None:
+            return
+        for dim in ds.dims:
+            if dim not in ds.coords:
+                ds.coords[dim] = self.inherited_coord(dim)
+    
+    def ensure_all_coords_defined_in_subtree(self) -> None:
+        node: XarrayTreeNode = self
+        while node is not None:
+            node.ensure_all_coords_defined()
+            node = node.next_depth_first()
     
     # data operations
 
@@ -478,13 +496,13 @@ class XarrayTreeNode():
             if i-1 >= 0:
                 return siblings[i-1]
 
-    def last_node_depth_first(self) -> XarrayTreeNode:
+    def last_depth_first(self) -> XarrayTreeNode:
         node: XarrayTreeNode = self
         while node.children:
             node = node.last_child()
         return node
 
-    def next_node_depth_first(self) -> XarrayTreeNode | None:
+    def next_depth_first(self) -> XarrayTreeNode | None:
         if self.children:
             return self.first_child()
         next_sibling: XarrayTreeNode = self.next_sibling()
@@ -497,10 +515,10 @@ class XarrayTreeNode():
                 return next_sibling
             node = node.parent
 
-    def prev_node_depth_first(self) -> XarrayTreeNode | None:
+    def prev_depth_first(self) -> XarrayTreeNode | None:
         prev_sibling: XarrayTreeNode = self.prev_sibling()
         if prev_sibling is not None:
-            return prev_sibling.last_node_depth_first()
+            return prev_sibling.last_depth_first()
         if self.parent is not None:
             return self.parent
     
@@ -520,12 +538,12 @@ class XarrayTreeNode():
     def subtree_max_depth(self) -> int:
         root_depth: int = self.depth()
         max_depth: int = 0
-        node: XarrayTreeNode = self.next_node_depth_first()
+        node: XarrayTreeNode = self.next_depth_first()
         while node is not None:
             depth: int = node.depth()
             if depth - root_depth > max_depth:
                 max_depth = depth - root_depth
-            node = node.next_node_depth_first()
+            node = node.next_depth_first()
         return max_depth
     
     def dump(self, indent: int = 0):
@@ -591,7 +609,7 @@ class XarrayTreeNode():
         return uname
 
 
-def test():
+def test_tree():
     root_ds = xr.Dataset(
         data_vars={
             'current': (['series', 'sweep', 'time'], np.random.rand(3, 10, 100) * 1e-9, {'units': 'A'}),
@@ -703,4 +721,5 @@ def test():
 
 
 if __name__ == '__main__':
-    test()
+    test_tree()
+

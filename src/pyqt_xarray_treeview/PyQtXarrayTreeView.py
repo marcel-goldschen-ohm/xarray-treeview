@@ -14,7 +14,7 @@ class XarrayTreeView(AbstractTreeView):
 
     def __init__(self, parent: QObject = None) -> None:
         AbstractTreeView.__init__(self, parent)
-        self.setSelectionMode(QAbstractItemView.MultiSelection)
+        # self.setSelectionMode(QAbstractItemView.MultiSelection)
         self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
 
         self.show_vars_action = QAction('Show Vars')
@@ -80,7 +80,7 @@ class XarrayTreeView(AbstractTreeView):
         if model is None:
             return
         selected: list[QModelIndex] = self.selectionModel().selectedIndexes()
-        item: XarrayTreeItem = model.root.next_item_depth_first()
+        item: XarrayTreeItem = model.root.next_depth_first()
         while item is not None:
             index: QModelIndex = model.createIndex(item.row(), 0, item)
             path = item.path
@@ -88,7 +88,7 @@ class XarrayTreeView(AbstractTreeView):
                 'expanded': self.isExpanded(index),
                 'selected': index in selected
             }
-            item = item.next_item_depth_first()
+            item = item.next_depth_first()
 
     def restore_state(self):
         model: XarrayTreeModel = self.model()
@@ -96,7 +96,7 @@ class XarrayTreeView(AbstractTreeView):
             return
         self.selectionModel().clearSelection()
         selection: QItemSelection = QItemSelection()
-        item: XarrayTreeItem = model.root.next_item_depth_first()
+        item: XarrayTreeItem = model.root.next_depth_first()
         while item is not None:
             try:
                 index: QModelIndex = model.createIndex(item.row(), 0, item)
@@ -106,7 +106,7 @@ class XarrayTreeView(AbstractTreeView):
                     selection.merge(QItemSelection(index, index), QItemSelectionModel.Select | QItemSelectionModel.Rows)
             except KeyError:
                 self.setExpanded(index, False)
-            item = item.next_item_depth_first()
+            item = item.next_depth_first()
         if selection.count():
             self.selectionModel().select(selection, QItemSelectionModel.Select | QItemSelectionModel.Rows)
     

@@ -118,7 +118,7 @@ class XarrayTreeModel(AbstractTreeModel):
                                 return False
                             if item.key == _item.key:
                                 changed_items.append(_item)
-                    _item = _item.next_item_depth_first()
+                    _item = _item.next_depth_first()
                 for _item in changed_items:
                     success: bool = _item.set_data(0, value)
                     if success:
