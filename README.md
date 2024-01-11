@@ -1,11 +1,11 @@
-# PyQt-Xarray-TreeView
-PyQt/PySide model/view for tree of xarray datasets.
+# xarray-treeview
+PyQt/PySide model/view for tree of Xarray datasets.
 
 # Install
 Should work with PySide6, PyQt6, or PyQt5.
 ```shell
-pip install PySide6 pyqt-xarray-treeview
+pip install PySide6 xarray-treeview
 ```
 
 # TODO
-- i/o (zarr)
+- drag items
