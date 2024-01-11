@@ -66,12 +66,14 @@ class XarrayTreeView(AbstractTreeView):
         self.restore_state()
     
     def set_data(self, root_node: XarrayTreeNode):
+        model: XarrayTreeModel = self.model()
+        if model is None:
+            return
         self.store_state()
         options = {
             'show_vars': self.show_vars_action.isChecked(),
             'show_coords': self.show_coords_action.isChecked(),
         }
-        model: XarrayTreeModel = self.model()
         model.root = XarrayTreeItem(node=root_node, key=None, options=options)
         self.restore_state()
     
