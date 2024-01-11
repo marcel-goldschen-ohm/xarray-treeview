@@ -8,7 +8,7 @@ from qtpy.QtWidgets import *
 import qtawesome as qta
 import xarray as xr
 from pyqt_ext import AbstractTreeModel
-from pyqt_xarray_treeview import XarrayTreeItem
+from xarray_treeview import XarrayTreeItem
 
 
 class XarrayTreeModel(AbstractTreeModel):

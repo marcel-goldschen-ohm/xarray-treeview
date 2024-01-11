@@ -6,8 +6,9 @@ from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
 import xarray as xr
+from xarray_tree import XarrayTreeNode
 from pyqt_ext import AbstractTreeView, KeyValueTreeItem, KeyValueTreeModel, KeyValueTreeView
-from pyqt_xarray_treeview import XarrayTreeNode, XarrayTreeItem, XarrayTreeModel
+from xarray_treeview import XarrayTreeItem, XarrayTreeModel
 
 
 class XarrayTreeView(AbstractTreeView):
