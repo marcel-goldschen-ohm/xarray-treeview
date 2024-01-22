@@ -41,11 +41,24 @@ class XarrayTreeItem(AbstractTreeItem):
     @property
     def path(self) -> str:
         if self.node is None:
-            return
-        path: str = self.node.path
+            return self.key
+        path: str = self.node.path.rstrip('/') + '/'
         if self.key is not None:
             path += self.key
         return path
+    
+    def name_from_path(self, maxchar: int = 50) -> str:
+        name: str = self.path
+        if maxchar is None or len(name) <= maxchar:
+            return name
+        name_parts: list[str] = name.split('/')
+        name = name_parts[-1]
+        for i in reversed(range(len(name_parts) - 1)):
+            if i > 0 and len(name) + len(name_parts[i]) >= maxchar:
+                name = '.../' + name
+                break
+            name = name_parts[i] + '/' + name
+        return name
     
     def is_node(self):
         return self.key is None
