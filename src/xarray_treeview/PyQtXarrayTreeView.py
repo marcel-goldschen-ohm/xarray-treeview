@@ -30,9 +30,6 @@ class XarrayTreeView(AbstractTreeView):
 
         # store/restore fold/selection state
         self._state = {}
-
-        # custom context menu items
-        self._custom_context_menu_actions: list[QAction] = []
     
     def contextMenu(self, index: QModelIndex = QModelIndex()) -> QMenu:
         menu: QMenu = AbstractTreeView.contextMenu(self, index)
@@ -43,17 +40,37 @@ class XarrayTreeView(AbstractTreeView):
         menu.addAction(model.show_details_column_action)
         if not index.isValid():
             return menu
+        
         item: XarrayTreeItem = model.get_item(index)
-        if self._custom_context_menu_actions:
-            menu.addSeparator()
-            for action in self._custom_context_menu_actions:
-                menu.addAction(action)
-        menu.addSeparator()
-        menu.addAction('Attrs', lambda self=self, item=item: self.edit_item_attrs(item))
-        menu.addSeparator()
-        menu.addAction('Info', lambda self=self, item=item: self.popup_item_info(item))
-        menu.addSeparator()
-        menu.addAction('Delete', lambda self=self, item=item: self.ask_to_delete_item(item))
+        name = item.name_from_path(maxchar=50)
+
+        item_menu = QMenu(name)
+        item_menu.addAction('Attrs', lambda self=self, item=item: self.edit_item_attrs(item))
+        item_menu.addSeparator()
+        item_menu.addAction('Info', lambda self=self, item=item: self.popup_item_info(item))
+
+        # if item.is_var():
+        #     other_items = []
+        #     item_ = item.root()
+        #     while item_ is not None:
+        #         if item_.is_var() and item_.key == item.key:
+        #             other_items.append(item_)
+        #         item_ = item_.next_depth_first()
+        #     if other_items:
+        #         item_menu.addSeparator()
+        #         math_menu = QMenu('Math')
+        #         for op in ['+', '-', '*', '/']:
+        #             op_menu = QMenu(op)
+        #             for item_ in other_items:
+        #                 name = item_.name_from_path(maxchar=50)
+        #                 op_menu.addAction(name, lambda self=self, lhs=item, op=op, rhs=item_: self.array_math(lhs, op, rhs))
+        #             math_menu.addMenu(op_menu)
+        #         item_menu.addMenu(math_menu)
+        
+        item_menu.addSeparator()
+        item_menu.addAction('Delete', lambda self=self, item=item: self.ask_to_delete_item(item))
+        menu.insertSeparator(menu.actions()[0])
+        menu.insertMenu(menu.actions()[0], item_menu)
         return menu
     
     def update_model_and_view(self):
@@ -198,6 +215,9 @@ class XarrayTreeView(AbstractTreeView):
             model.remove_item(item)
             node.parent = None
             del node
+    
+    # def array_math(lhs: XarrayTreeItem, op: str, rhs: XarrayTreeItem) -> None:
+    #     pass
 
 
 def test_live():
