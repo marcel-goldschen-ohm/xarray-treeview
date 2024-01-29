@@ -1,3 +1,3 @@
-from xarray_treeview.PyQtXarrayTreeItem import XarrayTreeItem
-from xarray_treeview.PyQtXarrayTreeModel import XarrayTreeModel
-from xarray_treeview.PyQtXarrayTreeView import XarrayTreeView
+from xarray_treeview.XarrayTreeItem import XarrayTreeItem
+from xarray_treeview.XarrayTreeModel import XarrayTreeModel
+from xarray_treeview.XarrayTreeView import XarrayTreeView

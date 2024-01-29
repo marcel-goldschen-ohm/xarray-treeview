@@ -19,7 +19,7 @@ class XarrayTreeItem(AbstractTreeItem):
 
         # recursively build subtree if this is a node and not an item (e.g., var or coord) within a node
         if key is None:
-            ds: xr.Dataset = node.dataset if node is not None else None
+            ds: xr.Dataset = node.data if node is not None else None
             if ds is not None:
                 show_vars: bool = not options.get('hide_vars', False) and options.get('show_vars', True)
                 show_coords: bool = not options.get('hide_coords', False) and options.get('show_coords', True)
@@ -64,10 +64,10 @@ class XarrayTreeItem(AbstractTreeItem):
         return self.key is None
     
     def is_var(self):
-        return (self.key is not None) and (self.key in self.node.dataset.data_vars)
+        return (self.key is not None) and (self.key in self.node.data.data_vars)
     
     def is_coord(self):
-        return (self.key is not None) and (self.key in self.node.dataset.coords)
+        return (self.key is not None) and (self.key in self.node.data.coords)
     
     def data(self, column: int):
         if column == 0:
@@ -77,10 +77,10 @@ class XarrayTreeItem(AbstractTreeItem):
                 return self.key
         elif column == 1:
             if self.is_node():
-                sizes = self.node.dataset.sizes
+                sizes = self.node.data.sizes
                 return '(' + ', '.join([f'{dim}: {size}' for dim, size in sizes.items()]) + ')'
             if self.is_var():
-                rep = str(self.node.dataset)
+                rep = str(self.node.data)
                 i = rep.find('Data variables:')
                 i = rep.find(self.key, i)  # find var
                 i = rep.find(') ', i) + 2  # skip dimensions
@@ -88,7 +88,7 @@ class XarrayTreeItem(AbstractTreeItem):
                 j = rep.find('\n', i)
                 return rep[i:j] if j > 0 else rep[i:]
             if self.is_coord():
-                rep = str(self.node.dataset)
+                rep = str(self.node.data)
                 i = rep.find('Coordinates:')
                 i = rep.find(self.key, i)  # find coord
                 i = rep.find(') ', i) + 2  # skip dimensions
@@ -103,12 +103,12 @@ class XarrayTreeItem(AbstractTreeItem):
                 return True
             if self.is_var() or self.is_coord():
                 # change var or coord name just for this dataset
-                ds: xr.Dataset = self.node.dataset
+                ds: xr.Dataset = self.node.data
                 if ds is not None:
                     if value in ds.data_vars or value in ds.coords:
                         # name already exists in dataset
                         return False
-                    self.node.dataset = ds.rename_vars({self.key: value})
+                    self.node.data = ds.rename_vars({self.key: value})
                     self.key = value
                     return True
         return False

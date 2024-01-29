@@ -104,7 +104,7 @@ class XarrayTreeModel(AbstractTreeModel):
                 changed_items: list[XarrayTreeItem] = []
                 _item: XarrayTreeItem = item.root()
                 while _item is not None:
-                    ds: xr.Dataset = _item.node.dataset
+                    ds: xr.Dataset = _item.node.data
                     if ds is not None:
                         if item.is_var() and _item.is_var():
                             if value in ds.data_vars:

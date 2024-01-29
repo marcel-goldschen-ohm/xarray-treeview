@@ -139,7 +139,7 @@ class XarrayTreeView(AbstractTreeView):
         return items
     
     def edit_item_attrs(self, item: XarrayTreeItem):
-        ds: xr.Dataset = item.node.dataset
+        ds: xr.Dataset = item.node.data
         if ds is None:
             return
         if item.is_node():
@@ -184,7 +184,7 @@ class XarrayTreeView(AbstractTreeView):
             ds.coords[item.key].attrs = attrs
     
     def popup_item_info(self, item: XarrayTreeItem):
-        ds: xr.Dataset = item.node.dataset
+        ds: xr.Dataset = item.node.data
         if ds is None:
             return
         if item.is_node():
@@ -221,9 +221,8 @@ class XarrayTreeView(AbstractTreeView):
 
 
 def test_live():
-    import sys
     import numpy as np
-    app = QApplication(sys.argv)
+    app = QApplication()
 
     raw_ds = xr.Dataset(
         data_vars={
@@ -254,10 +253,10 @@ def test_live():
     )
     # print('-----\n scaled_ds', scaled_ds)
     
-    root_node = XarrayTreeNode(name='/', dataset=None)
-    raw_node = XarrayTreeNode(name='raw data', dataset=raw_ds, parent=root_node)
-    baselined_node = XarrayTreeNode(name='baselined', dataset=baselined_ds, parent=raw_node)
-    scaled_node = XarrayTreeNode(name='scaled', dataset=scaled_ds, parent=baselined_node)
+    root_node = XarrayTreeNode(name='/', data=None)
+    raw_node = XarrayTreeNode(name='raw data', data=raw_ds, parent=root_node)
+    baselined_node = XarrayTreeNode(name='baselined', data=baselined_ds, parent=raw_node)
+    scaled_node = XarrayTreeNode(name='scaled', data=scaled_ds, parent=baselined_node)
     # print('-----\n', root_node.to_datatree())
 
     root_item = XarrayTreeItem(root_node)
@@ -272,7 +271,7 @@ def test_live():
     # from PySide6.QtTest import *
     # tester = QAbstractItemModelTester(model, QAbstractItemModelTester.FailureReportingMode.Fatal)
 
-    sys.exit(app.exec())
+    app.exec()
 
 
 if __name__ == '__main__':
