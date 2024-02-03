@@ -59,13 +59,13 @@ class XarrayTreeModel(AbstractTreeModel):
             return 2
         return 1
 
-    def flags(self, index: QModelIndex) -> Qt.ItemFlags:
+    def flags(self, index: QModelIndex) -> Qt.ItemFlag:
         if not index.isValid():
             return Qt.ItemFlag.NoItemFlags
         item: XarrayTreeItem = self.get_item(index)
         if item is None:
             return Qt.ItemFlag.NoItemFlags
-        if item.is_node() and 'dataset' not in self._allowed_selections:
+        if item.is_dataset() and 'dataset' not in self._allowed_selections:
             return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsEditable
         if item.is_var() and 'var' not in self._allowed_selections:
             return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsEditable
@@ -128,3 +128,60 @@ class XarrayTreeModel(AbstractTreeModel):
             success: bool = item.set_data(index.column(), value)
             return success
         return False
+    
+    # def moveRow(self, sourceParent: QModelIndex, sourceRow: int, destinationParent: QModelIndex, destinationRow: int) -> bool:
+    #     if sourceParent == destinationParent:
+    #         return False
+    #     if sourceRow < 0 or sourceRow >= self.rowCount(sourceParent):
+    #         return False
+    #     if destinationRow < 0:
+    #         # negative indexing
+    #         destinationRow += self.rowCount(destinationParent)
+    #     if destinationRow < 0 or destinationRow > self.rowCount(destinationParent):
+    #         return False
+
+    #     source_parent_item: XarrayTreeItem = self.get_item(sourceParent)
+    #     source_item: XarrayTreeItem = source_parent_item.children[sourceRow]
+    #     destination_parent_item: XarrayTreeItem = self.get_item(destinationParent)
+        
+    #     # try to move
+    #     success: bool = False
+    #     self.beginMoveRows(sourceParent, sourceRow, sourceRow, destinationParent, destinationRow)
+    #     try:
+    #         source_item.set_parent(destination_parent_item)
+    #         success = True
+    #     except:
+    #         success = False
+    #     # if source_item.is_dataset():
+    #     #     try:
+    #     #         source_item.node.parent = destination_parent_item.node
+    #     #         # destinationRow = destination_parent_item.children.index(source_item)
+    #     #         destination_parent_item.insert_child(destinationRow, source_item)
+    #     #         success = True
+    #     #     except:
+    #     #         pass
+    #     # elif source_item.is_var():
+    #     #     source_ds: xr.Dataset = source_parent_item.node.data
+    #     #     destination_ds: xr.Dataset = destination_parent_item.node.data
+    #     #     move_ds = xr.Dataset(data_vars={source_item.key: source_ds.data_vars[source_item.key]})
+    #     #     try:
+    #     #         destination_parent_item.node.data = xr.merge([destination_ds, move_ds])
+    #     #         source_parent_item.node.data = source_ds.drop_vars(source_item.key)
+    #     #         destination_parent_item.insert_child(destinationRow, source_item)
+    #     #         success = True
+    #     #     except:
+    #     #         # TODO: ask before combining with lossy merge
+    #     #         try:
+    #     #             destination_parent_item.node.data = move_ds.combine_first(destination_ds)
+    #     #             source_parent_item.node.data = source_ds.drop_vars(source_item.key)
+    #     #             destination_parent_item.insert_child(destinationRow, source_item)
+    #     #             success = True
+    #     #         except:
+    #     #             pass
+    #     # elif source_item.is_coord():
+    #     #     pass
+    #     self.endMoveRows()
+    #     return success
+    
+    # def supportedDropActions(self) -> Qt.DropActions:
+    #     return Qt.DropAction.MoveAction

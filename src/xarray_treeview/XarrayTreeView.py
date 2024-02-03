@@ -142,7 +142,7 @@ class XarrayTreeView(AbstractTreeView):
         ds: xr.Dataset = item.node.data
         if ds is None:
             return
-        if item.is_node():
+        if item.is_dataset():
             attrs = ds.attrs.copy()
         elif item.is_var():
             attrs = ds.data_vars[item.key].attrs.copy()
@@ -176,7 +176,7 @@ class XarrayTreeView(AbstractTreeView):
             return
         
         attrs = model.root.to_obj()
-        if item.is_node():
+        if item.is_dataset():
             ds.attrs = attrs
         elif item.is_var():
             ds.data_vars[item.key].attrs = attrs
@@ -187,7 +187,7 @@ class XarrayTreeView(AbstractTreeView):
         ds: xr.Dataset = item.node.data
         if ds is None:
             return
-        if item.is_node():
+        if item.is_dataset():
             text = str(ds)
         elif item.is_var():
             text = str(ds.data_vars[item.key])
@@ -218,6 +218,55 @@ class XarrayTreeView(AbstractTreeView):
     
     # def array_math(lhs: XarrayTreeItem, op: str, rhs: XarrayTreeItem) -> None:
     #     pass
+    
+    # def dragEnterEvent(self, event: QDragEnterEvent):
+    #     index: QModelIndex = event.source().currentIndex()
+    #     if index and index != QModelIndex():
+    #         self._indexBeingDragged = index
+    #         event.acceptProposedAction()
+    
+    # def dropEvent(self, event: QDropEvent):
+    #     src_index: QModelIndex = getattr(self, '_indexBeingDragged', None)
+    #     if not src_index or src_index == QModelIndex():
+    #         return
+    #     dst_index: QModelIndex = self.indexAt(event.pos()) # TODO: event.position() in Qt6?
+    #     if not dst_index:
+    #         return
+        
+    #     model: XarrayTreeModel = self.model()
+    #     src_parent_index = model.parent(src_index)
+    #     src_row = src_index.row()
+    #     dst_parent_index = model.parent(dst_index)
+    #     dst_row = dst_index.row()
+
+    #     # drop_pos = self.dropIndicatorPosition()
+    #     # dst_item = model.get_item(dst_index)
+    #     # if drop_pos == QAbstractItemView.OnItem:
+    #     #     if dst_item.isgroup():
+    #     #         # append src_index as last child of dst_index
+    #     #         dst_parent_index = dst_index
+    #     #         dst_row = model.rowCount(dst_parent_index)
+    #     #     # otherwise insert src_index as prior sibling of dst_index
+    #     #     pass
+    #     # elif drop_pos == QAbstractItemView.AboveItem:
+    #     #     # insert src_index as prior sibling of dst_index
+    #     #     pass
+    #     # elif drop_pos == QAbstractItemView.BelowItem:
+    #     #     # insert src_index as sibling just after dst_index
+    #     #     dst_row += 1
+    #     # elif drop_pos == QAbstractItemView.OnViewport:
+    #     #     # append src_index as last child of root
+    #     #     dst_parent_index = QModelIndex()
+    #     #     dst_row = model.rowCount(dst_parent_index)
+
+    #     old_max_depth = model.max_depth()
+    #     model.moveRow(src_parent_index, src_row, dst_parent_index, dst_row)
+    #     moved_index = model.index(dst_row, 0, dst_parent_index)
+    #     model.infoChanged.emit(moved_index)
+    #     new_max_depth = model.max_depth()
+    #     if new_max_depth != old_max_depth:
+    #         model.maxDepthChanged.emit(new_max_depth)
+    #     self._indexBeingDragged = None
 
 
 def test_live():
