@@ -6,7 +6,7 @@ from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
 import xarray as xr
-from xarray_tree import XarrayTreeNode
+from datatree import DataTree
 from pyqt_ext import AbstractTreeView, KeyValueTreeItem, KeyValueTreeModel, KeyValueTreeView
 from xarray_treeview import XarrayTreeItem, XarrayTreeModel
 
@@ -15,18 +15,18 @@ class XarrayTreeView(AbstractTreeView):
 
     def __init__(self, parent: QObject = None) -> None:
         AbstractTreeView.__init__(self, parent)
-        # self.setSelectionMode(QAbstractItemView.MultiSelection)
+
         self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
 
-        self.show_vars_action = QAction('Show Vars')
-        self.show_vars_action.setCheckable(True)
-        self.show_vars_action.setChecked(True)
-        self.show_vars_action.triggered.connect(self.update_model_and_view)
+        self._showVarsAction = QAction('Show Vars')
+        self._showVarsAction.setCheckable(True)
+        self._showVarsAction.setChecked(True)
+        self._showVarsAction.triggered.connect(self.updateModelAndView)
 
-        self.show_coords_action = QAction('Show Coords')
-        self.show_coords_action.setCheckable(True)
-        self.show_coords_action.setChecked(True)
-        self.show_coords_action.triggered.connect(self.update_model_and_view)
+        self._showCoordsAction = QAction('Show Coords')
+        self._showCoordsAction.setCheckable(True)
+        self._showCoordsAction.setChecked(True)
+        self._showCoordsAction.triggered.connect(self.updateModelAndView)
 
         # store/restore fold/selection state
         self._state = {}
@@ -35,72 +35,60 @@ class XarrayTreeView(AbstractTreeView):
         menu: QMenu = AbstractTreeView.contextMenu(self, index)
         model: XarrayTreeModel = self.model()
         menu.addSeparator()
-        menu.addAction(self.show_vars_action)
-        menu.addAction(self.show_coords_action)
-        menu.addAction(model.show_details_column_action)
+        menu.addAction(self._showVarsAction)
+        menu.addAction(self._showCoordsAction)
+        menu.addAction(model._show_details_column_action)
         if not index.isValid():
             return menu
         
-        item: XarrayTreeItem = model.get_item(index)
-        name = item.name_from_path(maxchar=50)
+        item: XarrayTreeItem = model.itemFromIndex(index)
+        itemPath = item.path
+        if len(itemPath) > 50:
+            itemPath = '...' + itemPath[-47:]
 
-        item_menu = QMenu(name)
-        item_menu.addAction('Attrs', lambda self=self, item=item: self.edit_item_attrs(item))
-        item_menu.addSeparator()
-        item_menu.addAction('Info', lambda self=self, item=item: self.popup_item_info(item))
-
-        # if item.is_var():
-        #     other_items = []
-        #     item_ = item.root()
-        #     while item_ is not None:
-        #         if item_.is_var() and item_.key == item.key:
-        #             other_items.append(item_)
-        #         item_ = item_.next_depth_first()
-        #     if other_items:
-        #         item_menu.addSeparator()
-        #         math_menu = QMenu('Math')
-        #         for op in ['+', '-', '*', '/']:
-        #             op_menu = QMenu(op)
-        #             for item_ in other_items:
-        #                 name = item_.name_from_path(maxchar=50)
-        #                 op_menu.addAction(name, lambda self=self, lhs=item, op=op, rhs=item_: self.array_math(lhs, op, rhs))
-        #             math_menu.addMenu(op_menu)
-        #         item_menu.addMenu(math_menu)
+        itemMenu = QMenu(itemPath)
+        itemMenu.addAction('Attrs', lambda self=self, item=item: self.editItemAttrs(item))
+        itemMenu.addSeparator()
+        itemMenu.addAction('Info', lambda self=self, item=item: self.popupItemInfo(item))
         
-        item_menu.addSeparator()
-        item_menu.addAction('Delete', lambda self=self, item=item: self.ask_to_delete_item(item))
+        if not item.isRoot():
+            itemMenu.addSeparator()
+            itemMenu.addAction('Delete', lambda self=self, item=item: self.askToDeleteItem(item))
+
         menu.insertSeparator(menu.actions()[0])
-        menu.insertMenu(menu.actions()[0], item_menu)
+        menu.insertMenu(menu.actions()[0], itemMenu)
+
         return menu
     
-    def update_model_and_view(self):
-        self.store_state()
+    def updateModelAndView(self):
+        self.storeState()
         options = {
-            'show_vars': self.show_vars_action.isChecked(),
-            'show_coords': self.show_coords_action.isChecked(),
+            'show_vars': self._showVarsAction.isChecked(),
+            'show_coords': self._showCoordsAction.isChecked(),
         }
         model: XarrayTreeModel = self.model()
-        model.root = XarrayTreeItem(node=model.root.node, key=None, options=options)
-        self.restore_state()
+        root: XarrayTreeItem = model.root()
+        model.setRoot(XarrayTreeItem(node=root.node, key=None, options=options))
+        self.restoreState()
     
-    def set_data(self, root_node: XarrayTreeNode):
+    def setRoot(self, dt: DataTree):
         model: XarrayTreeModel = self.model()
         if model is None:
             return
-        self.store_state()
+        self.storeState()
         options = {
-            'show_vars': self.show_vars_action.isChecked(),
-            'show_coords': self.show_coords_action.isChecked(),
+            'show_vars': self._showVarsAction.isChecked(),
+            'show_coords': self._showCoordsAction.isChecked(),
         }
-        model.root = XarrayTreeItem(node=root_node, key=None, options=options)
-        self.restore_state()
+        model.setRoot(XarrayTreeItem(node=dt, key=None, options=options))
+        self.restoreState()
     
-    def store_state(self):
+    def storeState(self):
         model: XarrayTreeModel = self.model()
         if model is None:
             return
         selected: list[QModelIndex] = self.selectionModel().selectedIndexes()
-        item: XarrayTreeItem = model.root.next_depth_first()
+        item: XarrayTreeItem = model.root().next()
         while item is not None:
             index: QModelIndex = model.createIndex(item.row(), 0, item)
             path = item.path
@@ -108,15 +96,15 @@ class XarrayTreeView(AbstractTreeView):
                 'expanded': self.isExpanded(index),
                 'selected': index in selected
             }
-            item = item.next_depth_first()
+            item = item.next()
 
-    def restore_state(self):
+    def restoreState(self):
         model: XarrayTreeModel = self.model()
         if model is None:
             return
         self.selectionModel().clearSelection()
         selection: QItemSelection = QItemSelection()
-        item: XarrayTreeItem = model.root.next_depth_first()
+        item: XarrayTreeItem = model.root().next()
         while item is not None:
             try:
                 index: QModelIndex = model.createIndex(item.row(), 0, item)
@@ -126,28 +114,23 @@ class XarrayTreeView(AbstractTreeView):
                     selection.merge(QItemSelection(index, index), QItemSelectionModel.Select | QItemSelectionModel.Rows)
             except KeyError:
                 self.setExpanded(index, False)
-            item = item.next_depth_first()
+            item = item.next()
         if selection.count():
             self.selectionModel().select(selection, QItemSelectionModel.Select | QItemSelectionModel.Rows)
     
-    def selected_items(self) -> list[XarrayTreeItem]:
+    def selectedItems(self) -> list[XarrayTreeItem]:
         model: XarrayTreeModel = self.model()
         if model is None:
             return []
         selected: list[QModelIndex] = self.selectionModel().selectedRows()
-        items: list[XarrayTreeItem] = [model.get_item(index) for index in selected]
+        items: list[XarrayTreeItem] = [model.itemFromIndex(index) for index in selected]
         return items
     
-    def edit_item_attrs(self, item: XarrayTreeItem):
-        ds: xr.Dataset = item.node.data
-        if ds is None:
-            return
+    def editItemAttrs(self, item: XarrayTreeItem):
         if item.is_dataset():
-            attrs = ds.attrs.copy()
-        elif item.is_var():
-            attrs = ds.data_vars[item.key].attrs.copy()
-        elif item.is_coord():
-            attrs = ds.coords[item.key].attrs.copy()
+            attrs = item.node.ds.attrs.copy()
+        elif item.is_var() or item.is_coord():
+            attrs = item.node.ds[item.key].attrs.copy()
         else:
             return
         
@@ -175,24 +158,20 @@ class XarrayTreeView(AbstractTreeView):
         if dlg.exec() != QDialog.Accepted:
             return
         
-        attrs = model.root.to_obj()
+        attrs = model.root().value
         if item.is_dataset():
-            ds.attrs = attrs
-        elif item.is_var():
-            ds.data_vars[item.key].attrs = attrs
-        elif item.is_coord():
-            ds.coords[item.key].attrs = attrs
+            item.node.attrs = attrs
+            # ds = item.node.to_dataset()
+            # ds.attrs = attrs
+            # item.node.ds = ds
+        elif item.is_var() or item.is_coord():
+            item.node[item.key].attrs = attrs
     
-    def popup_item_info(self, item: XarrayTreeItem):
-        ds: xr.Dataset = item.node.data
-        if ds is None:
-            return
+    def popupItemInfo(self, item: XarrayTreeItem):
         if item.is_dataset():
-            text = str(ds)
-        elif item.is_var():
-            text = str(ds.data_vars[item.key])
-        elif item.is_coord():
-            text = str(ds.coords[item.key])
+            text = str(item.node.ds)
+        elif item.is_var() or item.is_coord():
+            text = str(item.node.ds[item.key])
         else:
             return
         
@@ -207,70 +186,21 @@ class XarrayTreeView(AbstractTreeView):
         layout.addWidget(textEdit)
         dlg.exec()
     
-    def ask_to_delete_item(self, item: XarrayTreeItem):
-        answer = QMessageBox.question(self, 'Delete', f'Delete {item.path}?', QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
+    def askToRemoveItem(self, item: XarrayTreeItem):
+        if item.is_root():
+            return
+        itemPath = item.path
+        if len(itemPath) > 50:
+            itemPath = '...' + itemPath[-47:]
+        answer = QMessageBox.question(self, 'Delete', f'Delete {itemPath}?', QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
         if answer == QMessageBox.StandardButton.Yes:
             model: XarrayTreeModel = self.model()
-            node: XarrayTreeNode = item.node
-            model.remove_item(item)
-            node.parent = None
-            del node
-    
-    # def array_math(lhs: XarrayTreeItem, op: str, rhs: XarrayTreeItem) -> None:
-    #     pass
-    
-    # def dragEnterEvent(self, event: QDragEnterEvent):
-    #     index: QModelIndex = event.source().currentIndex()
-    #     if index and index != QModelIndex():
-    #         self._indexBeingDragged = index
-    #         event.acceptProposedAction()
-    
-    # def dropEvent(self, event: QDropEvent):
-    #     src_index: QModelIndex = getattr(self, '_indexBeingDragged', None)
-    #     if not src_index or src_index == QModelIndex():
-    #         return
-    #     dst_index: QModelIndex = self.indexAt(event.pos()) # TODO: event.position() in Qt6?
-    #     if not dst_index:
-    #         return
-        
-    #     model: XarrayTreeModel = self.model()
-    #     src_parent_index = model.parent(src_index)
-    #     src_row = src_index.row()
-    #     dst_parent_index = model.parent(dst_index)
-    #     dst_row = dst_index.row()
-
-    #     # drop_pos = self.dropIndicatorPosition()
-    #     # dst_item = model.get_item(dst_index)
-    #     # if drop_pos == QAbstractItemView.OnItem:
-    #     #     if dst_item.isgroup():
-    #     #         # append src_index as last child of dst_index
-    #     #         dst_parent_index = dst_index
-    #     #         dst_row = model.rowCount(dst_parent_index)
-    #     #     # otherwise insert src_index as prior sibling of dst_index
-    #     #     pass
-    #     # elif drop_pos == QAbstractItemView.AboveItem:
-    #     #     # insert src_index as prior sibling of dst_index
-    #     #     pass
-    #     # elif drop_pos == QAbstractItemView.BelowItem:
-    #     #     # insert src_index as sibling just after dst_index
-    #     #     dst_row += 1
-    #     # elif drop_pos == QAbstractItemView.OnViewport:
-    #     #     # append src_index as last child of root
-    #     #     dst_parent_index = QModelIndex()
-    #     #     dst_row = model.rowCount(dst_parent_index)
-
-    #     old_max_depth = model.max_depth()
-    #     model.moveRow(src_parent_index, src_row, dst_parent_index, dst_row)
-    #     moved_index = model.index(dst_row, 0, dst_parent_index)
-    #     model.infoChanged.emit(moved_index)
-    #     new_max_depth = model.max_depth()
-    #     if new_max_depth != old_max_depth:
-    #         model.maxDepthChanged.emit(new_max_depth)
-    #     self._indexBeingDragged = None
+            model.removeItem(item)
 
 
 def test_live():
     import numpy as np
+    from xarray_treeview import XarrayDndTreeModel
     app = QApplication()
 
     raw_ds = xr.Dataset(
@@ -302,14 +232,14 @@ def test_live():
     )
     # print('-----\n scaled_ds', scaled_ds)
     
-    root_node = XarrayTreeNode(name='/', data=None)
-    raw_node = XarrayTreeNode(name='raw data', data=raw_ds, parent=root_node)
-    baselined_node = XarrayTreeNode(name='baselined', data=baselined_ds, parent=raw_node)
-    scaled_node = XarrayTreeNode(name='scaled', data=scaled_ds, parent=baselined_node)
+    root_node = DataTree(name='root')
+    raw_node = DataTree(name='raw data', data=raw_ds, parent=root_node)
+    baselined_node = DataTree(name='baselined', data=baselined_ds, parent=raw_node)
+    scaled_node = DataTree(name='scaled', data=scaled_ds, parent=baselined_node)
     # print('-----\n', root_node.to_datatree())
 
     root_item = XarrayTreeItem(root_node)
-    model = XarrayTreeModel(root_item)
+    model = XarrayDndTreeModel(root_item)
     view = XarrayTreeView()
     view.setModel(model)
     view.show()
