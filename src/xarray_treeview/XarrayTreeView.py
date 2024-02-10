@@ -88,15 +88,15 @@ class XarrayTreeView(AbstractTreeView):
         if model is None:
             return
         selected: list[QModelIndex] = self.selectionModel().selectedIndexes()
-        item: XarrayTreeItem = model.root().next()
-        while item is not None:
-            index: QModelIndex = model.createIndex(item.row(), 0, item)
+        for item in model.root().depth_first():
+            if item is model.root():
+                continue
+            index: QModelIndex = model.createIndex(item.sibling_index, 0, item)
             path = item.path
             self._state[path] = {
                 'expanded': self.isExpanded(index),
                 'selected': index in selected
             }
-            item = item.next()
 
     def restoreState(self):
         model: XarrayTreeModel = self.model()
@@ -104,19 +104,19 @@ class XarrayTreeView(AbstractTreeView):
             return
         self.selectionModel().clearSelection()
         selection: QItemSelection = QItemSelection()
-        item: XarrayTreeItem = model.root().next()
-        while item is not None:
+        for item in model.root().depth_first():
+            if item is model.root():
+                continue
             try:
-                index: QModelIndex = model.createIndex(item.row(), 0, item)
+                index: QModelIndex = model.createIndex(item.sibling_index, 0, item)
                 path = item.path
                 self.setExpanded(index, self._state[path]['expanded'])
                 if self._state[path]['selected']:
-                    selection.merge(QItemSelection(index, index), QItemSelectionModel.Select | QItemSelectionModel.Rows)
+                    selection.merge(QItemSelection(index, index), QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
             except KeyError:
                 self.setExpanded(index, False)
-            item = item.next()
         if selection.count():
-            self.selectionModel().select(selection, QItemSelectionModel.Select | QItemSelectionModel.Rows)
+            self.selectionModel().select(selection, QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
     
     def selectedItems(self) -> list[XarrayTreeItem]:
         model: XarrayTreeModel = self.model()
