@@ -7,37 +7,60 @@ from qtpy.QtGui import *
 from qtpy.QtWidgets import *
 import xarray as xr
 from datatree import DataTree
-from pyqt_ext import AbstractTreeView, KeyValueTreeItem, KeyValueTreeModel, KeyValueTreeView
+from pyqt_ext.tree import TreeView, KeyValueTreeItem, KeyValueTreeModel, KeyValueTreeView
 from xarray_treeview import XarrayTreeItem, XarrayTreeModel
 
 
-class XarrayTreeView(AbstractTreeView):
+class XarrayTreeView(TreeView):
 
     def __init__(self, parent: QObject = None) -> None:
-        AbstractTreeView.__init__(self, parent)
+        TreeView.__init__(self, parent)
 
         self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
 
         self._showVarsAction = QAction('Show Vars')
         self._showVarsAction.setCheckable(True)
         self._showVarsAction.setChecked(True)
-        self._showVarsAction.triggered.connect(self.updateModelAndView)
+        self._showVarsAction.triggered.connect(self.updateTree)
 
         self._showCoordsAction = QAction('Show Coords')
         self._showCoordsAction.setCheckable(True)
         self._showCoordsAction.setChecked(True)
-        self._showCoordsAction.triggered.connect(self.updateModelAndView)
-
-        # store/restore fold/selection state
-        self._state = {}
+        self._showCoordsAction.triggered.connect(self.updateTree)
+    
+    def setTree(self, dt: DataTree):
+        self.storeState()
+        options = {
+            'show_vars': self._showVarsAction.isChecked(),
+            'show_coords': self._showCoordsAction.isChecked(),
+        }
+        root: XarrayTreeItem = XarrayTreeItem(dt, options=options)
+        model: XarrayTreeModel = self.model()
+        if model is None:
+            model = XarrayTreeModel(root)
+            self.setModel(model)
+        else:
+            model.setRoot(root)
+        self.restoreState()
+    
+    def updateTree(self):
+        self.storeState()
+        options = {
+            'show_vars': self._showVarsAction.isChecked(),
+            'show_coords': self._showCoordsAction.isChecked(),
+        }
+        model: XarrayTreeModel = self.model()
+        root: XarrayTreeItem = model.root()
+        model.setRoot(XarrayTreeItem(node=root.node, key=None, options=options))
+        self.restoreState()
     
     def contextMenu(self, index: QModelIndex = QModelIndex()) -> QMenu:
-        menu: QMenu = AbstractTreeView.contextMenu(self, index)
+        menu: QMenu = TreeView.contextMenu(self, index)
         model: XarrayTreeModel = self.model()
         menu.addSeparator()
         menu.addAction(self._showVarsAction)
         menu.addAction(self._showCoordsAction)
-        menu.addAction(model._show_details_column_action)
+        menu.addAction(model._showDetailsColumnAction)
         if not index.isValid():
             return menu
         
@@ -51,83 +74,17 @@ class XarrayTreeView(AbstractTreeView):
         itemMenu.addSeparator()
         itemMenu.addAction('Info', lambda self=self, item=item: self.popupItemInfo(item))
         
-        if not item.isRoot():
+        if not item.is_root():
             itemMenu.addSeparator()
-            itemMenu.addAction('Delete', lambda self=self, item=item: self.askToDeleteItem(item))
+            itemMenu.addAction('Delete', lambda self=self, item=item, label=itemPath: self.askToRemoveItem(item, label))
 
         menu.insertSeparator(menu.actions()[0])
         menu.insertMenu(menu.actions()[0], itemMenu)
 
         return menu
     
-    def updateModelAndView(self):
-        self.storeState()
-        options = {
-            'show_vars': self._showVarsAction.isChecked(),
-            'show_coords': self._showCoordsAction.isChecked(),
-        }
-        model: XarrayTreeModel = self.model()
-        root: XarrayTreeItem = model.root()
-        model.setRoot(XarrayTreeItem(node=root.node, key=None, options=options))
-        self.restoreState()
-    
-    def setRoot(self, dt: DataTree):
-        model: XarrayTreeModel = self.model()
-        if model is None:
-            return
-        self.storeState()
-        options = {
-            'show_vars': self._showVarsAction.isChecked(),
-            'show_coords': self._showCoordsAction.isChecked(),
-        }
-        model.setRoot(XarrayTreeItem(node=dt, key=None, options=options))
-        self.restoreState()
-    
-    def storeState(self):
-        model: XarrayTreeModel = self.model()
-        if model is None:
-            return
-        selected: list[QModelIndex] = self.selectionModel().selectedIndexes()
-        for item in model.root().depth_first():
-            if item is model.root():
-                continue
-            index: QModelIndex = model.createIndex(item.sibling_index, 0, item)
-            path = item.path
-            self._state[path] = {
-                'expanded': self.isExpanded(index),
-                'selected': index in selected
-            }
-
-    def restoreState(self):
-        model: XarrayTreeModel = self.model()
-        if model is None:
-            return
-        self.selectionModel().clearSelection()
-        selection: QItemSelection = QItemSelection()
-        for item in model.root().depth_first():
-            if item is model.root():
-                continue
-            try:
-                index: QModelIndex = model.createIndex(item.sibling_index, 0, item)
-                path = item.path
-                self.setExpanded(index, self._state[path]['expanded'])
-                if self._state[path]['selected']:
-                    selection.merge(QItemSelection(index, index), QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
-            except KeyError:
-                self.setExpanded(index, False)
-        if selection.count():
-            self.selectionModel().select(selection, QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
-    
-    def selectedItems(self) -> list[XarrayTreeItem]:
-        model: XarrayTreeModel = self.model()
-        if model is None:
-            return []
-        selected: list[QModelIndex] = self.selectionModel().selectedRows()
-        items: list[XarrayTreeItem] = [model.itemFromIndex(index) for index in selected]
-        return items
-    
     def editItemAttrs(self, item: XarrayTreeItem):
-        if item.is_dataset():
+        if item.is_node():
             attrs = item.node.ds.attrs.copy()
         elif item.is_var() or item.is_coord():
             attrs = item.node.ds[item.key].attrs.copy()
@@ -159,16 +116,13 @@ class XarrayTreeView(AbstractTreeView):
             return
         
         attrs = model.root().value
-        if item.is_dataset():
+        if item.is_node():
             item.node.attrs = attrs
-            # ds = item.node.to_dataset()
-            # ds.attrs = attrs
-            # item.node.ds = ds
         elif item.is_var() or item.is_coord():
             item.node[item.key].attrs = attrs
     
     def popupItemInfo(self, item: XarrayTreeItem):
-        if item.is_dataset():
+        if item.is_node():
             text = str(item.node.ds)
         elif item.is_var() or item.is_coord():
             text = str(item.node.ds[item.key])
@@ -186,16 +140,47 @@ class XarrayTreeView(AbstractTreeView):
         layout.addWidget(textEdit)
         dlg.exec()
     
-    def askToRemoveItem(self, item: XarrayTreeItem):
-        if item.is_root():
+    def dropEvent(self, event: QDropEvent):
+        src_index: QModelIndex = getattr(self, '_src_index', None)
+        if (src_index is None) or (not src_index.isValid()) or (src_index == QModelIndex()):
+            event.ignore()
             return
-        itemPath = item.path
-        if len(itemPath) > 50:
-            itemPath = '...' + itemPath[-47:]
-        answer = QMessageBox.question(self, 'Delete', f'Delete {itemPath}?', QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
-        if answer == QMessageBox.StandardButton.Yes:
-            model: XarrayTreeModel = self.model()
-            model.removeItem(item)
+        dst_index: QModelIndex = self.indexAt(event.pos())
+        
+        model: AbstractTreeModel = self.model()
+        src_parent_index: QModelIndex = model.parent(src_index)
+        src_row = src_index.row()
+        dst_parent_index: QModelIndex = model.parent(dst_index)
+        dst_row = dst_index.row()
+
+        drop_pos = self.dropIndicatorPosition()
+        if drop_pos == QAbstractItemView.DropIndicatorPosition.OnViewport:
+            dst_parent_index = QModelIndex()
+            dst_row = model.rowCount(dst_parent_index)
+        elif drop_pos == QAbstractItemView.DropIndicatorPosition.OnItem:
+            dst_parent_index = dst_index
+            dst_row = model.rowCount(dst_parent_index)
+        elif drop_pos == QAbstractItemView.DropIndicatorPosition.AboveItem:
+            pass
+        elif drop_pos == QAbstractItemView.DropIndicatorPosition.BelowItem:
+            dst_row += 1
+        
+        # move nodes to after vars and coords
+        while dst_row < model.rowCount(dst_parent_index):
+            dst_item = model.itemFromIndex(model.index(dst_row, 0, dst_parent_index))
+            if dst_item.is_node():
+                break
+            dst_row += 1
+        
+        if event.dropAction() == Qt.DropAction.MoveAction:
+            model.moveRow(src_parent_index, src_row, dst_parent_index, dst_row)
+        else:
+            event.ignore()
+            return
+
+        # We already handled the drop event, so ignore the default implementation.
+        event.setDropAction(Qt.DropAction.IgnoreAction)
+        event.accept()
 
 
 def test_live():
@@ -233,7 +218,7 @@ def test_live():
     # print('-----\n scaled_ds', scaled_ds)
     
     root_node = DataTree(name='root')
-    raw_node = DataTree(name='raw data', data=raw_ds, parent=root_node)
+    raw_node = DataTree(name='raw', data=raw_ds, parent=root_node)
     baselined_node = DataTree(name='baselined', data=baselined_ds, parent=raw_node)
     scaled_node = DataTree(name='scaled', data=scaled_ds, parent=baselined_node)
     # print('-----\n', root_node.to_datatree())
@@ -246,9 +231,6 @@ def test_live():
     view.resize(QSize(600, 600))
     view.expandAll()
     view.resizeAllColumnsToContents()
-
-    # from PySide6.QtTest import *
-    # tester = QAbstractItemModelTester(model, QAbstractItemModelTester.FailureReportingMode.Fatal)
 
     app.exec()
 

@@ -4,19 +4,19 @@
 from __future__ import annotations
 import xarray as xr
 from datatree import DataTree
-from pyqt_ext import AbstractTreeItem
+from pyqt_ext.tree import AbstractTreeItem
 
 
 class XarrayTreeItem(AbstractTreeItem):
     
-    def __init__(self, node: DataTree, key = None, options: dict = {}, parent: XarrayTreeItem | None = None) -> None:
+    def __init__(self, node: DataTree, key: str | None = None, options: dict = {}, parent: XarrayTreeItem | None = None) -> None:
         # xarray DataTree node
         self.node: DataTree = node
 
         # key into xarray DataTree node, or None to refer to the node itself
-        self.key = key
+        self._key = key
 
-        AbstractTreeItem.__init__(self, parent=parent)
+        AbstractTreeItem.__init__(self, name=self.name, parent=parent)
 
         # recursively build subtree if this is a dataset and not a data_var or coord within a dataset
         if key is None:
@@ -31,20 +31,92 @@ class XarrayTreeItem(AbstractTreeItem):
             for child in node.children.values():
                 XarrayTreeItem(child, None, options, parent=self)
     
-    def __repr__(self):
-        if self.is_dataset():
+    @AbstractTreeItem.parent.setter
+    def parent(self, parent: XarrayTreeItem | None) -> None:
+        if self.parent is parent:
+            return
+        if parent is not None:
+            if not parent.is_node():
+                raise ValueError('Parent must refer to a DataTree node.')
+        if self.is_node():
+            if parent is not None:
+                if self in parent.children:
+                    # should never happen
+                    raise ValueError('Node already exists in parent.')
+                if self.node.name in parent.node.children:
+                    if parent.node.children[self.node.name] is not self.node:
+                        raise ValueError(f'Node with name {self.node.name} already exists in parent.')
+        elif self.is_var() or self.is_coord():
+            if (parent is None) or not parent.is_node():
+                raise ValueError('Variables and coordinates must have a parent node.')
+        old_parent: XarrayTreeItem | None = self.parent
+
+        # update item tree
+        AbstractTreeItem.parent.fset(self, parent)
+    
+        # update xarray DataTree
+        if self.is_node():
+            if self.node.parent is not None:
+                new_parent_node: DataTree | None = parent.node if parent is not None else None
+                if self.node.parent is not new_parent_node:
+                    self.node.orphan()
+            if parent is not None:
+                if self.node.parent is not parent.node:
+                    self.node.parent = parent.node
+        # elif self.is_var() or self.is_coord():
+        #     old_node: DataTree = self.node
+        #     # remove from old node
+        #     if self.is_var():
+        #         ds: xr.Dataset = xr.Dataset(
+        #             data_vars={
+        #                 self.key: old_node.to_dataset()[self.key]
+        #             }
+        #         )
+        #     elif self.is_coord():
+        #         ds: xr.Dataset = xr.Dataset(
+        #             coords={
+        #                 self.key: old_node.to_dataset()[self.key]
+        #             }
+        #         )
+        #     old_node.ds = old_node.to_dataset().drop_vars([self.key])
+        #     # insert into new dataset !!! uses combine first
+        #     new_node: DataTree = parent.node
+        #     new_node.ds = ds.combine_first(new_node.to_dataset())
+        #     self.node = new_node
+    
+    @property
+    def name(self) -> str:
+        if self.is_node():
             return self.node.name
         if self.is_var() or self.is_coord():
             return self.key
     
-    @property
-    def path(self) -> str:
-        path: str = self.node.path
-        if self.key is not None:
-            path += '/' + self.key
-        return path
+    @name.setter
+    def name(self, name: str) -> None:
+        if self.is_node():
+            if self.node.name != name:
+                self.node.name = name
+        if self.is_var() or self.is_coord():
+            if self.key != name:
+                self.key = name
     
-    def is_dataset(self):
+    @property
+    def key(self) -> str | None:
+        return getattr(self, '_key', None)
+    
+    @key.setter
+    def key(self, key: str | None) -> None:
+        if key is not None:
+            if not isinstance(key, str):
+                raise ValueError('Key must be a string or None.')
+            if key in self.node:
+                raise ValueError(f'Key {key} already exists in node.')
+            old_key = self.key
+            if old_key is not None:
+                self.node.ds = self.node.to_dataset().rename_vars({old_key: key})
+        self._key = key
+    
+    def is_node(self):
         return self.key is None
     
     def is_var(self):
@@ -52,58 +124,12 @@ class XarrayTreeItem(AbstractTreeItem):
     
     def is_coord(self):
         return (self.key is not None) and (self.key in self.node.ds.coords)
-    
-    @AbstractTreeItem.parent.setter
-    def parent(self, parent: XarrayTreeItem | None) -> None:
-        old_parent = self.parent
-        if self.parent is parent:
-            return
-        if (parent is not None) and (not parent.is_dataset()):
-            raise ValueError('Parent must be a Dataset.')
-        if self.parent is not None:
-            # detach from old parent
-            if self in self.parent.children:
-                # remove node from tree
-                self.node.parent = None
-                # remove item from parent's children
-                self.parent.children.remove(self)
-            self._parent = None
-        if parent is not None:
-            # attach to new parent
-            if self not in parent.children:
-                # insert node into tree
-                try:
-                    if self.is_dataset():
-                        self.node.parent = parent.node
-                    elif self.is_var():
-                        ds: xr.Dataset = xr.Dataset(
-                            data_vars={
-                                self.key: self.node.to_dataset()[self.key]
-                            }
-                        )
-                        parent.node.ds = ds.combine_first(parent.node.to_dataset())
-                    elif self.is_coord():
-                        ds: xr.Dataset = xr.Dataset(
-                            coords={
-                                self.key: self.node.to_dataset()[self.key]
-                            }
-                        )
-                        parent.node.ds = ds.combine_first(parent.node.to_dataset())
-                    # insert into parent's children
-                    parent.children.append(self)
-                except:
-                    self.parent = old_parent
-                    return
-            self._parent = parent
 
-    def data(self, column: int):
+    def get_data(self, column: int):
         if column == 0:
-            if self.is_dataset():
-                return self.node.name
-            if self.is_var() or self.is_coord():
-                return self.key
+            return self.name
         elif column == 1:
-            if self.is_dataset():
+            if self.is_node():
                 sizes = self.node.ds.sizes
                 return '(' + ', '.join([f'{dim}: {size}' for dim, size in sizes.items()]) + ')'
             if self.is_var():
@@ -125,37 +151,32 @@ class XarrayTreeItem(AbstractTreeItem):
     
     def set_data(self, column: int, value) -> bool:
         if column == 0:
-            if self.is_dataset():
-                if (self.node.parent is not None) and (value in self.node.parent.children):
-                    # name already exists in siblings
+            try:
+                if value == self.name:
                     return False
-                self.node.name = value  # TODO: This break tree linkage because the old key in self.node.parent.children is not updated.
+                self.name = value
                 return True
-            if self.is_var() or self.is_coord():
-                if value in self.node.ds:
-                    # name already exists in dataset
-                    return False
-                self.node.ds = self.node.to_dataset().rename_vars({self.key: value})
-                self.key = value
-                return True
+            except:
+                return False
         return False
 
 
 def test_tree():
+    print('\nDataTree...')
     ds = xr.tutorial.load_dataset('air_temperature')
-
-    root = DataTree(name='root')
-    child1 = DataTree(name='child1', data=ds, parent=root)
-    child2 = DataTree(name='child2', parent=root)
-    child3 = DataTree(name='child3', parent=root)
+    dt = DataTree(name='root')
+    child1 = DataTree(name='child1', data=ds, parent=dt)
+    child2 = DataTree(name='child2', parent=dt)
+    child3 = DataTree(name='child3', parent=dt)
     grandchild1 = DataTree(name='grandchild1', parent=child3)
     grandchild2 = DataTree(name='grandchild2', parent=child3)
     greatgrandchild1 = DataTree(name='greatgrandchild1', parent=grandchild1)
     greatgrandchild2 = DataTree(name='greatgrandchild2', parent=grandchild1)
-    print(root)
+    print(dt)
 
-    root_item = XarrayTreeItem(root)
-    print(root_item)
+    print('\nXarrayTreeItem tree...')
+    root = XarrayTreeItem(dt)
+    print(root)
 
 
 if __name__ == '__main__':
