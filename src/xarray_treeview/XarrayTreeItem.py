@@ -170,15 +170,6 @@ def test_tree():
     print('\nXarrayTreeItem tree...')
     root = XarrayTreeItem(dt)
     print(root)
-    # item = root['/child1/lat']
-    # print(item.name, item.key)
-    # print(repr(root))
-    # for child in root.children:
-    #     print(repr(child))
-    #     for grandchild in child.children:
-    #         print(repr(grandchild))
-    #         for greatgrandchild in grandchild.children:
-    #             print(repr(greatgrandchild))
 
 
 if __name__ == '__main__':
