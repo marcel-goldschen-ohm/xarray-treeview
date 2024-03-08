@@ -147,7 +147,7 @@ class XarrayTreeView(TreeView):
             return
         dst_index: QModelIndex = self.indexAt(event.pos())
         
-        model: AbstractTreeModel = self.model()
+        model: XarrayTreeModel = self.model()
         src_parent_index: QModelIndex = model.parent(src_index)
         src_row = src_index.row()
         dst_parent_index: QModelIndex = model.parent(dst_index)

@@ -49,6 +49,10 @@ class XarrayTreeItem(AbstractTreeItem):
         elif self.is_var() or self.is_coord():
             if (parent is None) or not parent.is_node():
                 raise ValueError('Variables and coordinates must have a parent node.')
+            if parent is not None:
+                if parent.node is not self.node:
+                    if self.name in parent.node:
+                        raise ValueError(f'{self.name} already exists in parent node.')
         old_parent: XarrayTreeItem | None = self.parent
 
         # update item tree
@@ -63,26 +67,15 @@ class XarrayTreeItem(AbstractTreeItem):
             if parent is not None:
                 if self.node.parent is not parent.node:
                     self.node.parent = parent.node
-        # elif self.is_var() or self.is_coord():
-        #     old_node: DataTree = self.node
-        #     # remove from old node
-        #     if self.is_var():
-        #         ds: xr.Dataset = xr.Dataset(
-        #             data_vars={
-        #                 self.key: old_node.to_dataset()[self.key]
-        #             }
-        #         )
-        #     elif self.is_coord():
-        #         ds: xr.Dataset = xr.Dataset(
-        #             coords={
-        #                 self.key: old_node.to_dataset()[self.key]
-        #             }
-        #         )
-        #     old_node.ds = old_node.to_dataset().drop_vars([self.key])
-        #     # insert into new dataset !!! uses combine first
-        #     new_node: DataTree = parent.node
-        #     new_node.ds = ds.combine_first(new_node.to_dataset())
-        #     self.node = new_node
+        elif self.is_var() or self.is_coord():
+            old_node: DataTree = self.node
+            new_node: DataTree = parent.node if parent is not None else xr.Dataset(name=self.name)
+            if new_node is not old_node:
+                if self.is_var():
+                    new_node.data_vars[self.key] = old_node.data_vars[self.key]
+                elif self.is_coord():
+                    new_node.coords[self.key] = old_node.coords[self.key]
+                old_node.ds = old_node.to_dataset().drop_vars([self.key])
     
     @property
     def name(self) -> str:
@@ -177,6 +170,15 @@ def test_tree():
     print('\nXarrayTreeItem tree...')
     root = XarrayTreeItem(dt)
     print(root)
+    # item = root['/child1/lat']
+    # print(item.name, item.key)
+    # print(repr(root))
+    # for child in root.children:
+    #     print(repr(child))
+    #     for grandchild in child.children:
+    #         print(repr(grandchild))
+    #         for greatgrandchild in grandchild.children:
+    #             print(repr(greatgrandchild))
 
 
 if __name__ == '__main__':
