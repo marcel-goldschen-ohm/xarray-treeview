@@ -75,8 +75,8 @@ class XarrayTreeModel(AbstractTreeModel):
             flags |= Qt.ItemFlag.ItemIsSelectable
         # drag and drop
         if self.supportedDropActions() != Qt.DropAction.IgnoreAction:
-            if item.is_node():
-                flags |= Qt.ItemFlag.ItemIsDragEnabled | Qt.ItemFlag.ItemIsDropEnabled
+            # if item.is_node():
+            flags |= Qt.ItemFlag.ItemIsDragEnabled | Qt.ItemFlag.ItemIsDropEnabled
         return flags
 
     def data(self, index: QModelIndex, role: int):

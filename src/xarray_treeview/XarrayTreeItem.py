@@ -72,9 +72,9 @@ class XarrayTreeItem(AbstractTreeItem):
             new_node: DataTree = parent.node if parent is not None else xr.Dataset(name=self.name)
             if new_node is not old_node:
                 if self.is_var():
-                    new_node.data_vars[self.key] = old_node.data_vars[self.key]
+                    new_node.ds = new_node.to_dataset().assign({self.key: old_node[self.key]})
                 elif self.is_coord():
-                    new_node.coords[self.key] = old_node.coords[self.key]
+                    new_node.ds = new_node.to_dataset().assign_coords({self.key: old_node[self.key]})
                 old_node.ds = old_node.to_dataset().drop_vars([self.key])
     
     @property
@@ -170,6 +170,16 @@ def test_tree():
     print('\nXarrayTreeItem tree...')
     root = XarrayTreeItem(dt)
     print(root)
+
+    # print(child1.data_vars['air'])
+
+    child1.ds = child1.to_dataset().assign({'air2': child1['air']})
+    print(dt)
+
+    # ds = child1.to_dataset()
+    # print(ds)
+    # ds = ds.assign(air2=ds.air)
+    # print(ds)
 
 
 if __name__ == '__main__':

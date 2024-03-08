@@ -165,12 +165,31 @@ class XarrayTreeView(TreeView):
         elif drop_pos == QAbstractItemView.DropIndicatorPosition.BelowItem:
             dst_row += 1
         
-        # move nodes to after vars and coords
-        while dst_row < model.rowCount(dst_parent_index):
-            dst_item = model.itemFromIndex(model.index(dst_row, 0, dst_parent_index))
-            if dst_item.is_node():
-                break
-            dst_row += 1
+        # organize child order: vars, coords, nodes
+        src_item = model.itemFromIndex(model.index(src_row, 0, src_parent_index))
+        if src_item.is_var():
+            while dst_row > 0:
+                dst_prev_item = model.itemFromIndex(model.index(dst_row - 1, 0, dst_parent_index))
+                if dst_prev_item.is_var():
+                    break
+                dst_row -= 1
+        elif src_item.is_coord():
+            while dst_row > 0:
+                dst_prev_item = model.itemFromIndex(model.index(dst_row - 1, 0, dst_parent_index))
+                if dst_prev_item.is_var() or dst_prev_item.is_coord():
+                    break
+                dst_row -= 1
+            while dst_row < model.rowCount(dst_parent_index):
+                dst_next_item = model.itemFromIndex(model.index(dst_row, 0, dst_parent_index))
+                if dst_next_item.is_coord() or dst_next_item.is_node():
+                    break
+                dst_row += 1
+        elif src_item.is_node():
+            while dst_row < model.rowCount(dst_parent_index):
+                dst_next_item = model.itemFromIndex(model.index(dst_row, 0, dst_parent_index))
+                if dst_next_item.is_node():
+                    break
+                dst_row += 1
         
         if event.dropAction() == Qt.DropAction.MoveAction:
             model.moveRow(src_parent_index, src_row, dst_parent_index, dst_row)
@@ -181,6 +200,8 @@ class XarrayTreeView(TreeView):
         # We already handled the drop event, so ignore the default implementation.
         event.setDropAction(Qt.DropAction.IgnoreAction)
         event.accept()
+
+        print(model.root())
 
 
 def test_live():
