@@ -125,7 +125,7 @@ class XarrayTreeView(TreeView):
         if item.is_node():
             text = str(item.node.ds)
         elif item.is_var() or item.is_coord():
-            text = str(item.node.ds[item.key])
+            text = str(item.node[item.key])
         else:
             return
         
@@ -158,8 +158,14 @@ class XarrayTreeView(TreeView):
             dst_parent_index = QModelIndex()
             dst_row = model.rowCount(dst_parent_index)
         elif drop_pos == QAbstractItemView.DropIndicatorPosition.OnItem:
-            dst_parent_index = dst_index
-            dst_row = model.rowCount(dst_parent_index)
+            dst_item = model.itemFromIndex(dst_index)
+            if dst_item.is_node():
+                dst_parent_index = dst_index
+                dst_row = model.rowCount(dst_parent_index)
+            elif dst_item.is_var():
+                pass # handle drops on vars?
+            elif dst_item.is_coord():
+                pass # handle drops on coords?
         elif drop_pos == QAbstractItemView.DropIndicatorPosition.AboveItem:
             pass
         elif drop_pos == QAbstractItemView.DropIndicatorPosition.BelowItem:
@@ -201,7 +207,8 @@ class XarrayTreeView(TreeView):
         event.setDropAction(Qt.DropAction.IgnoreAction)
         event.accept()
 
-        print(model.root())
+        # debug
+        # print(model.root().dumps())
 
 
 def test_live():

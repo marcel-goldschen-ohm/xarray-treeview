@@ -31,6 +31,14 @@ class XarrayTreeItem(AbstractTreeItem):
             for child in node.children.values():
                 XarrayTreeItem(child, None, options, parent=self)
     
+    def __repr__(self) -> str:
+        # Return a single line string representation of this item.
+        # See __str__ for a multi-line representation of the tree.
+        node = self.node.name if self.node else None
+        if node is None and self.node is not None:
+            node = f'{self.node.__class__.__name__}@{id(self.node)}'
+        return AbstractTreeItem.__repr__(self) + f', node={node}, key={self.key}'
+    
     @AbstractTreeItem.parent.setter
     def parent(self, parent: XarrayTreeItem | None) -> None:
         if self.parent is parent:
@@ -47,16 +55,12 @@ class XarrayTreeItem(AbstractTreeItem):
                     if parent.node.children[self.node.name] is not self.node:
                         raise ValueError(f'Node with name {self.node.name} already exists in parent.')
         elif self.is_var() or self.is_coord():
-            if (parent is None) or not parent.is_node():
+            if (parent is not None) and not parent.is_node():
                 raise ValueError('Variables and coordinates must have a parent node.')
             if parent is not None:
                 if parent.node is not self.node:
                     if self.name in parent.node:
                         raise ValueError(f'{self.name} already exists in parent node.')
-        old_parent: XarrayTreeItem | None = self.parent
-
-        # update item tree
-        AbstractTreeItem.parent.fset(self, parent)
     
         # update xarray DataTree
         if self.is_node():
@@ -68,14 +72,20 @@ class XarrayTreeItem(AbstractTreeItem):
                 if self.node.parent is not parent.node:
                     self.node.parent = parent.node
         elif self.is_var() or self.is_coord():
+            # if parent is None:
+            #     # delete var/coord
             old_node: DataTree = self.node
-            new_node: DataTree = parent.node if parent is not None else xr.Dataset(name=self.name)
+            new_node: DataTree = parent.node if parent is not None else DataTree(name=self.name)
             if new_node is not old_node:
                 if self.is_var():
                     new_node.ds = new_node.to_dataset().assign({self.key: old_node[self.key]})
                 elif self.is_coord():
                     new_node.ds = new_node.to_dataset().assign_coords({self.key: old_node[self.key]})
                 old_node.ds = old_node.to_dataset().drop_vars([self.key])
+                self.node = new_node
+
+        # update item tree
+        AbstractTreeItem.parent.fset(self, parent)
     
     @property
     def name(self) -> str:
@@ -83,6 +93,7 @@ class XarrayTreeItem(AbstractTreeItem):
             return self.node.name
         if self.is_var() or self.is_coord():
             return self.key
+        return f'{self.__class__.__name__}@{id(self)}'
     
     @name.setter
     def name(self, name: str) -> None:
@@ -108,6 +119,14 @@ class XarrayTreeItem(AbstractTreeItem):
             if old_key is not None:
                 self.node.ds = self.node.to_dataset().rename_vars({old_key: key})
         self._key = key
+    
+    def type(self) -> str:
+        if self.is_node():
+            return 'node'
+        if self.is_var():
+            return 'var'
+        if self.is_coord():
+            return 'coord'
     
     def is_node(self):
         return self.key is None
@@ -170,16 +189,6 @@ def test_tree():
     print('\nXarrayTreeItem tree...')
     root = XarrayTreeItem(dt)
     print(root)
-
-    # print(child1.data_vars['air'])
-
-    child1.ds = child1.to_dataset().assign({'air2': child1['air']})
-    print(dt)
-
-    # ds = child1.to_dataset()
-    # print(ds)
-    # ds = ds.assign(air2=ds.air)
-    # print(ds)
 
 
 if __name__ == '__main__':
