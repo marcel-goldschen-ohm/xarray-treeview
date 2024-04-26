@@ -28,6 +28,16 @@ class XarrayTreeView(TreeView):
         self._showCoordsAction.setChecked(True)
         self._showCoordsAction.triggered.connect(self.updateTree)
     
+    def setModel(self, model: XarrayTreeModel):
+        root: XarrayTreeItem = model.root()
+        if root is not None:
+            options = {
+                'show_vars': self._showVarsAction.isChecked(),
+                'show_coords': self._showCoordsAction.isChecked(),
+            }
+            model.setRoot(XarrayTreeItem(node=root.node, key=None, options=options))
+        TreeView.setModel(self, model)
+    
     def setTree(self, dt: DataTree):
         self.storeState()
         options = {
@@ -44,15 +54,33 @@ class XarrayTreeView(TreeView):
         self.restoreState()
     
     def updateTree(self):
-        self.storeState()
+        model: XarrayTreeModel = self.model()
+        if model is None:
+            return
+        root: XarrayTreeItem = model.root()
+        if root is None:
+            return
         options = {
             'show_vars': self._showVarsAction.isChecked(),
             'show_coords': self._showCoordsAction.isChecked(),
         }
-        model: XarrayTreeModel = self.model()
-        root: XarrayTreeItem = model.root()
+        self.storeState()
         model.setRoot(XarrayTreeItem(node=root.node, key=None, options=options))
         self.restoreState()
+    
+    def isShowVars(self) -> bool:
+        return self._showVarsAction.isChecked()
+    
+    def setShowVars(self, show: bool):
+        self._showVarsAction.setChecked(show)
+        self.updateTree()
+    
+    def isShowCoords(self) -> bool:
+        return self._showCoordsAction.isChecked()
+    
+    def setShowCoords(self, show: bool):
+        self._showCoordsAction.setChecked(show)
+        self.updateTree()
     
     def contextMenu(self, index: QModelIndex = QModelIndex()) -> QMenu:
         menu: QMenu = TreeView.contextMenu(self, index)
