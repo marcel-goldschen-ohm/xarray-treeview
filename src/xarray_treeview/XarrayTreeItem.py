@@ -150,6 +150,7 @@ class XarrayTreeItem(AbstractTreeItem):
                 i = rep.find(self.key, i)  # find var
                 i = rep.find(') ', i) + 2  # skip dimensions
                 i = rep.find(' ', i) + 1  # skip dtype
+                i = rep.find(' ', i) + 1  # skip bytes
                 j = rep.find('\n', i)
                 return rep[i:j] if j > 0 else rep[i:]
             if self.is_coord():
@@ -158,6 +159,7 @@ class XarrayTreeItem(AbstractTreeItem):
                 i = rep.find(self.key, i)  # find coord
                 i = rep.find(') ', i) + 2  # skip dimensions
                 i = rep.find(' ', i) + 1  # skip dtype
+                i = rep.find(' ', i) + 1  # skip bytes
                 j = rep.find('\n', i)
                 return rep[i:j] if j > 0 else rep[i:]
     
