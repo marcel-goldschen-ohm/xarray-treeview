@@ -171,76 +171,6 @@ class XarrayTreeView(TreeView):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(textEdit)
         dlg.exec()
-    
-    def dropEvent(self, event: QDropEvent):
-        src_index: QModelIndex = getattr(self, '_src_index', None)
-        if (src_index is None) or (not src_index.isValid()) or (src_index == QModelIndex()):
-            event.ignore()
-            return
-        dst_index: QModelIndex = self.indexAt(event.pos())
-        
-        model: XarrayTreeModel = self.model()
-        src_parent_index: QModelIndex = model.parent(src_index)
-        src_row = src_index.row()
-        dst_parent_index: QModelIndex = model.parent(dst_index)
-        dst_row = dst_index.row()
-
-        drop_pos = self.dropIndicatorPosition()
-        if drop_pos == QAbstractItemView.DropIndicatorPosition.OnViewport:
-            dst_parent_index = QModelIndex()
-            dst_row = model.rowCount(dst_parent_index)
-        elif drop_pos == QAbstractItemView.DropIndicatorPosition.OnItem:
-            dst_item = model.itemFromIndex(dst_index)
-            if dst_item.is_node():
-                dst_parent_index = dst_index
-                dst_row = model.rowCount(dst_parent_index)
-            elif dst_item.is_var():
-                pass # handle drops on vars?
-            elif dst_item.is_coord():
-                pass # handle drops on coords?
-        elif drop_pos == QAbstractItemView.DropIndicatorPosition.AboveItem:
-            pass
-        elif drop_pos == QAbstractItemView.DropIndicatorPosition.BelowItem:
-            dst_row += 1
-        
-        # organize child order: vars, coords, nodes
-        src_item = model.itemFromIndex(model.index(src_row, 0, src_parent_index))
-        if src_item.is_var():
-            while dst_row > 0:
-                dst_prev_item = model.itemFromIndex(model.index(dst_row - 1, 0, dst_parent_index))
-                if dst_prev_item.is_var():
-                    break
-                dst_row -= 1
-        elif src_item.is_coord():
-            while dst_row > 0:
-                dst_prev_item = model.itemFromIndex(model.index(dst_row - 1, 0, dst_parent_index))
-                if dst_prev_item.is_var() or dst_prev_item.is_coord():
-                    break
-                dst_row -= 1
-            while dst_row < model.rowCount(dst_parent_index):
-                dst_next_item = model.itemFromIndex(model.index(dst_row, 0, dst_parent_index))
-                if dst_next_item.is_coord() or dst_next_item.is_node():
-                    break
-                dst_row += 1
-        elif src_item.is_node():
-            while dst_row < model.rowCount(dst_parent_index):
-                dst_next_item = model.itemFromIndex(model.index(dst_row, 0, dst_parent_index))
-                if dst_next_item.is_node():
-                    break
-                dst_row += 1
-        
-        if event.dropAction() == Qt.DropAction.MoveAction:
-            model.moveRow(src_parent_index, src_row, dst_parent_index, dst_row)
-        else:
-            event.ignore()
-            return
-
-        # We already handled the drop event, so ignore the default implementation.
-        event.setDropAction(Qt.DropAction.IgnoreAction)
-        event.accept()
-
-        # debug
-        # print(model.root().dumps())
 
 
 def test_live():
@@ -286,6 +216,7 @@ def test_live():
     root_item = XarrayTreeItem(root_node)
     model = XarrayDndTreeModel(root_item)
     view = XarrayTreeView()
+    view.setSelectionMode(QAbstractItemView.ExtendedSelection)
     view.setModel(model)
     view.show()
     view.resize(QSize(600, 600))

@@ -72,8 +72,6 @@ class XarrayTreeItem(AbstractTreeItem):
                 if self.node.parent is not parent.node:
                     self.node.parent = parent.node
         elif self.is_var() or self.is_coord():
-            # if parent is None:
-            #     # delete var/coord
             old_node: DataTree = self.node
             new_node: DataTree = parent.node if parent is not None else DataTree(name=self.name)
             if new_node is not old_node:
