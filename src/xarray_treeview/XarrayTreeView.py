@@ -100,9 +100,9 @@ class XarrayTreeView(TreeView):
             itemPath = '...' + itemPath[-47:]
 
         itemMenu = QMenu(itemPath)
-        itemMenu.addAction('Attrs', lambda self=self, item=item: self.editItemAttrs(item))
-        itemMenu.addSeparator()
         itemMenu.addAction('Info', lambda self=self, item=item: self.popupItemInfo(item))
+        itemMenu.addSeparator()
+        itemMenu.addAction('Attrs', lambda self=self, item=item: self.editItemAttrs(item))
         
         if not item.is_root():
             itemMenu.addSeparator()

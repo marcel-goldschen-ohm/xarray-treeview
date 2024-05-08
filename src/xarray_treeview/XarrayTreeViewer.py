@@ -28,12 +28,12 @@ class XarrayTreeViewer(QSplitter):
         self._attrs_view = KeyValueTreeView()
         self._attrs_view.setModel(KeyValueTreeModel())
 
-        tabs = QTabWidget()
-        tabs.addTab(self._info_view, "Info")
-        tabs.addTab(self._attrs_view, "Attrs")
+        self.metadata_tabs = QTabWidget()
+        self.metadata_tabs.addTab(self._info_view, "Info")
+        self.metadata_tabs.addTab(self._attrs_view, "Attrs")
 
         self.addWidget(self._data_view)
-        self.addWidget(tabs)
+        self.addWidget(self.metadata_tabs)
 
         self._data_view.selectionWasChanged.connect(self._on_selection_changed)
         self._data_view.finishedEditingAttrs.connect(self._on_selection_changed)
