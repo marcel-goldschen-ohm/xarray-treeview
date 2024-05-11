@@ -44,13 +44,15 @@ class XarrayTreeViewer(QSplitter):
     def _on_selection_changed(self) -> None:
         selected_items = self._data_view.selectedItems()
         
-        if len(selected_items) != 1:
+        if len(selected_items) == 0:
+            item: XarrayTreeItem = self._data_view.model().root()
+        elif len(selected_items) == 1:
+            item: XarrayTreeItem = selected_items[0]
+        else:
             # clear tabs
             self._info_view.clear()
             self._attrs_view.model().setRoot(KeyValueTreeItem(None, {}))
             return
-        
-        item: XarrayTreeItem = selected_items[0]
 
         if item.is_node():
             text = str(item.node.ds)
