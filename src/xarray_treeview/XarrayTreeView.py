@@ -31,13 +31,14 @@ class XarrayTreeView(TreeView):
         self._showCoordsAction.triggered.connect(self.updateTree)
     
     def setModel(self, model: XarrayTreeModel):
-        root: XarrayTreeItem = model.root()
-        if root is not None:
-            options = {
-                'show_vars': self._showVarsAction.isChecked(),
-                'show_coords': self._showCoordsAction.isChecked(),
-            }
-            model.setRoot(XarrayTreeItem(node=root.node, key=None, options=options))
+        if model is not None:
+            root: XarrayTreeItem = model.root()
+            if root is not None:
+                options = {
+                    'show_vars': self._showVarsAction.isChecked(),
+                    'show_coords': self._showCoordsAction.isChecked(),
+                }
+                model.setRoot(XarrayTreeItem(node=root.node, key=None, options=options))
         TreeView.setModel(self, model)
     
     def setTree(self, dt: DataTree):
@@ -86,30 +87,27 @@ class XarrayTreeView(TreeView):
     
     def contextMenu(self, index: QModelIndex = QModelIndex()) -> QMenu:
         menu: QMenu = TreeView.contextMenu(self, index)
+
         model: XarrayTreeModel = self.model()
         menu.addSeparator()
         menu.addAction(self._showVarsAction)
         menu.addAction(self._showCoordsAction)
         menu.addAction(model._showDetailsColumnAction)
-        if not index.isValid():
-            return menu
         
-        item: XarrayTreeItem = model.itemFromIndex(index)
-        itemPath = item.path
-        if len(itemPath) > 50:
-            itemPath = '...' + itemPath[-47:]
-
-        itemMenu = QMenu(itemPath)
-        itemMenu.addAction('Info', lambda self=self, item=item: self.popupItemInfo(item))
-        itemMenu.addSeparator()
-        itemMenu.addAction('Attrs', lambda self=self, item=item: self.editItemAttrs(item))
-        
-        if not item.is_root():
-            itemMenu.addSeparator()
-            itemMenu.addAction('Delete', lambda self=self, item=item, label=itemPath: self.askToRemoveItem(item, label))
-
-        menu.insertSeparator(menu.actions()[0])
-        menu.insertMenu(menu.actions()[0], itemMenu)
+        if index.isValid():
+            item: XarrayTreeItem = model.itemFromIndex(index)
+            label = item.path
+            if len(label) > 50:
+                label = '...' + label[-47:]
+            item_action = menu.actions()[0]
+            item_menu = menu.menuInAction(item_action)
+            if item_menu is not None:
+                item_menu.addAction('Info', lambda self=self, item=item: self.popupItemInfo(item))
+                item_menu.addSeparator()
+                item_menu.addAction('Attrs', lambda self=self, item=item: self.editItemAttrs(item))
+                item_menu.addSeparator()
+                delete_action = item_menu.actions()[0]
+                item_menu.addAction(delete_action)
 
         return menu
     

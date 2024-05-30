@@ -51,12 +51,12 @@ class XarrayTreeViewer(QSplitter):
         else:
             # clear tabs
             self._info_view.clear()
-            self._attrs_view.model().setRoot(KeyValueTreeItem(None, {}))
+            self._attrs_view.setModel(None)
             return
 
         if item.is_node():
             text = str(item.node.ds)
-            attrs = item.node.ds.attrs
+            attrs = item.node.attrs
         elif item.is_var() or item.is_coord():
             text = str(item.node[item.key])
             attrs = item.node[item.key].attrs
@@ -65,6 +65,8 @@ class XarrayTreeViewer(QSplitter):
             attrs = None
         
         self._info_view.setPlainText(text)
+        if self._attrs_view.model() is None:
+            self._attrs_view.setModel(KeyValueTreeModel())
         self._attrs_view.model().setRoot(KeyValueTreeItem(None, attrs))
 
 
@@ -112,8 +114,10 @@ def test_live():
     
     viewer = XarrayTreeViewer()
     view = viewer.view()
-    model = view.model()
-    model.setRoot(root_item)
+    model = XarrayDndTreeModel(root_item)
+    model.setShowDetailsColumn(False)
+    view.setModel(model)
+    view.setAlternatingRowColors(False)
     viewer.show()
     viewer.resize(QSize(400, 600))
     viewer.setSizes([300, 300])
