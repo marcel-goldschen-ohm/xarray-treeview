@@ -59,7 +59,7 @@ class XarrayTreeItem(AbstractTreeItem):
                 raise ValueError('Variables and coordinates must have a parent node.')
             if parent is not None:
                 if parent.node is not self.node:
-                    if self.name in parent.node:
+                    if (self.is_var() and (self.name in parent.node.ds.data_vars)) or (self.is_coord() and (self.name in parent.node.ds.coords)):
                         raise ValueError(f'{self.name} already exists in parent node.')
     
         # update xarray DataTree
@@ -75,6 +75,10 @@ class XarrayTreeItem(AbstractTreeItem):
             old_node: DataTree = self.node
             new_node: DataTree = parent.node if parent is not None else DataTree(name=self.name)
             if new_node is not old_node:
+                try:
+                    xr.align(old_node.ds, new_node.ds, join='exact')
+                except ValueError:
+                    raise ValueError('Cannot move variable or coordinate to parent node with different dimensions.')
                 if self.is_var():
                     new_node.ds = new_node.to_dataset().assign({self.key: old_node[self.key]})
                 elif self.is_coord():
