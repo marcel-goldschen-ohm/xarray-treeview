@@ -59,7 +59,7 @@ class XarrayTreeItem(AbstractTreeItem):
                 raise ValueError('Variables and coordinates must have a parent node.')
             if parent is not None:
                 if parent.node is not self.node:
-                    if (self.is_var() and (self.name in parent.node.ds.data_vars)) or (self.is_coord() and (self.name in parent.node.ds.coords)):
+                    if (self.is_var() and (self.name in parent.node.data_vars)) or (self.is_coord() and (self.name in parent.node.coords)):
                         raise ValueError(f'{self.name} already exists in parent node.')
     
         # update xarray DataTree
