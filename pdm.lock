@@ -4,8 +4,8 @@
 [metadata]
 groups = ["default"]
 strategy = ["cross_platform", "inherit_metadata"]
-lock_version = "4.4.1"
-content_hash = "sha256:011cacb1dadc1a744dee16e44bbbff662633c007b66b4332dae6358077d6ac50"
+lock_version = "4.4.2"
+content_hash = "sha256:8b827858d9b5d69b6899b5e6eba9ca25af1f6e3e397add8287105ab2fe507cae"
 
 [[package]]
 name = "numpy"
@@ -54,13 +54,13 @@ files = [
 
 [[package]]
 name = "packaging"
-version = "24.0"
-requires_python = ">=3.7"
+version = "24.1"
+requires_python = ">=3.8"
 summary = "Core utilities for Python packages"
 groups = ["default"]
 files = [
-    {file = "packaging-24.0-py3-none-any.whl", hash = "sha256:2ddfb553fdf02fb784c234c7ba6ccc288296ceabec964ad2eae3777778130bc5"},
-    {file = "packaging-24.0.tar.gz", hash = "sha256:eb82c5e3e56209074766e6885bb04b8c38a0c015d0a30036ebe7ece34c9989e9"},
+    {file = "packaging-24.1-py3-none-any.whl", hash = "sha256:5b8f2217dbdbd2f7f384c41c628544e6d52f2d0f53c6d0c3ea61aa5d1d7ff124"},
+    {file = "packaging-24.1.tar.gz", hash = "sha256:026ed72c8ed3fcce5bf8950572258698927fd1dbda10a5e981cdf0ac37f4f002"},
 ]
 
 [[package]]
@@ -201,31 +201,29 @@ files = [
 
 [[package]]
 name = "xarray"
-version = "2024.3.0"
+version = "2024.6.0"
 requires_python = ">=3.9"
 summary = "N-D labeled arrays and datasets in Python"
 groups = ["default"]
 dependencies = [
     "numpy>=1.23",
-    "packaging>=22",
-    "pandas>=1.5",
+    "packaging>=23.1",
+    "pandas>=2.0",
 ]
 files = [
-    {file = "xarray-2024.3.0-py3-none-any.whl", hash = "sha256:ca2bc4da2bf2e7879e15862a7a7c3fc76ad19f6a08931d030220cef39a29118d"},
-    {file = "xarray-2024.3.0.tar.gz", hash = "sha256:5c1db19efdde61db7faedad8fc944f4e29698fb6fbd578d352668b63598bd1d8"},
+    {file = "xarray-2024.6.0-py3-none-any.whl", hash = "sha256:721a7394e8ec3d592b2d8ebe21eed074ac077dc1bb1bd777ce00e41700b4866c"},
+    {file = "xarray-2024.6.0.tar.gz", hash = "sha256:0b91e0bc4dc0296947947640fe31ec6e867ce258d2f7cbc10bedf4a6d68340c7"},
 ]
 
 [[package]]
 name = "xarray-datatree"
-version = "0.0.14"
+version = "0.1.dev285"
 requires_python = ">=3.9"
+git = "https://github.com/marcel-goldschen-ohm/datatree"
+revision = "bfd2569b05840a52ca74159c9155371519167517"
 summary = "Hierarchical tree-like data structures for xarray"
 groups = ["default"]
 dependencies = [
     "packaging",
     "xarray>=2023.12.0",
-]
-files = [
-    {file = "xarray-datatree-0.0.14.tar.gz", hash = "sha256:26169af35b0df0d17652e229cef210decf0711dd88e33419142edc6674113af4"},
-    {file = "xarray_datatree-0.0.14-py3-none-any.whl", hash = "sha256:07f5d0d9a03a3220d732e1c764ee60f2c5110f884a290b2af371f92952379166"},
 ]

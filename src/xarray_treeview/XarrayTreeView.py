@@ -222,6 +222,8 @@ def test_live():
     view.resizeAllColumnsToContents()
 
     app.exec()
+    print(root_node)
+    print(root_node.children)
 
 
 if __name__ == '__main__':
