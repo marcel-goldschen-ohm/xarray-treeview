@@ -96,18 +96,24 @@ class XarrayTreeView(TreeView):
         
         if index.isValid():
             item: XarrayTreeItem = model.itemFromIndex(index)
-            label = item.path
-            if len(label) > 50:
-                label = '...' + label[-47:]
-            item_action = menu.actions()[0]
-            item_menu = menu.menuInAction(item_action)
-            if item_menu is not None:
-                item_menu.addAction('Info', lambda self=self, item=item: self.popupItemInfo(item))
-                item_menu.addSeparator()
-                item_menu.addAction('Attrs', lambda self=self, item=item: self.editItemAttrs(item))
-                item_menu.addSeparator()
-                delete_action = item_menu.actions()[0]
-                item_menu.addAction(delete_action)
+        else:
+            item: XarrayTreeItem = model.root()
+        label = item.path
+        if len(label) > 50:
+            label = '...' + label[-47:]
+        item_action = menu.actions()[0]
+        item_menu = menu.menuInAction(item_action)
+        if item_menu is None:
+            item_menu = QMenu(label)
+            menu.insertMenu(menu.actions()[0], item_menu)
+            menu.insertSeparator(menu.actions()[1])
+        if item_menu is not None:
+            item_menu.addAction('Info', lambda self=self, item=item: self.popupItemInfo(item))
+            item_menu.addSeparator()
+            item_menu.addAction('Attrs', lambda self=self, item=item: self.editItemAttrs(item))
+            item_menu.addSeparator()
+            delete_action = item_menu.actions()[0]
+            item_menu.addAction(delete_action)
 
         return menu
     
