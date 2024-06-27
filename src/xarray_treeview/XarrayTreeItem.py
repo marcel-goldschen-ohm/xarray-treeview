@@ -76,9 +76,19 @@ class XarrayTreeItem(AbstractTreeItem):
             new_node: DataTree = parent.node if parent is not None else DataTree(name=self.name)
             if new_node is not old_node:
                 try:
+                    # if this does not raise an error, then the two nodes have the same dimensions and coordinates,
+                    # so we can move the variable or coordinate to the new node
                     xr.align(old_node.ds, new_node.ds, join='exact')
                 except ValueError:
-                    raise ValueError('Cannot move variable or coordinate to parent node with different dimensions.')
+                    ok = False
+                    if self.is_coord():
+                        # if this coord is not defined in the new node, but has the same dimension, we can move it
+                        dim = self.name
+                        if old_node.ds.sizes[dim] == new_node.ds.sizes[dim]:
+                            if dim not in new_node.ds.coords:
+                                ok = True
+                    if not ok:
+                        raise ValueError('Cannot move variable or coordinate to parent node with different dimensions.')
                 if self.is_var():
                     new_node.ds = new_node.to_dataset().assign({self.key: old_node[self.key]})
                 elif self.is_coord():

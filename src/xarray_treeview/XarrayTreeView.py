@@ -29,6 +29,12 @@ class XarrayTreeView(TreeView):
         self._showCoordsAction.setCheckable(True)
         self._showCoordsAction.setChecked(True)
         self._showCoordsAction.triggered.connect(self.updateTree)
+
+        # these will appear in the item's context menu
+        self._itemFunctions: dict[str, 'function(XarrayTreeItem)'] = {}  # e.g., {'Print': print}
+
+        # limit length of path in context menu
+        self._maxPathLengthInContextMenu = 50
     
     def setModel(self, model: XarrayTreeModel):
         if model is not None:
@@ -99,8 +105,8 @@ class XarrayTreeView(TreeView):
         else:
             item: XarrayTreeItem = model.root()
         label = item.path
-        if len(label) > 50:
-            label = '...' + label[-47:]
+        if len(label) > self._maxPathLengthInContextMenu:
+            label = '...' + label[-(self._maxPathLengthInContextMenu - 3):]
         item_action = menu.actions()[0]
         item_menu = menu.menuInAction(item_action)
         if item_menu is None:
@@ -108,12 +114,18 @@ class XarrayTreeView(TreeView):
             menu.insertMenu(menu.actions()[0], item_menu)
             menu.insertSeparator(menu.actions()[1])
         if item_menu is not None:
+            if len(item_menu.actions()) > 0:
+                delete_action = item_menu.actions()[0]
+            else:
+                delete_action = None
             item_menu.addAction('Info', lambda self=self, item=item: self.popupItemInfo(item))
-            item_menu.addSeparator()
             item_menu.addAction('Attrs', lambda self=self, item=item: self.editItemAttrs(item))
-            item_menu.addSeparator()
-            delete_action = item_menu.actions()[0]
-            item_menu.addAction(delete_action)
+            for key, func in self._itemFunctions.items():
+                item_menu.addSeparator()
+                item_menu.addAction(key, lambda item=item: func(item))
+            if delete_action is not None:
+                item_menu.addSeparator()
+                item_menu.addAction(delete_action)
 
         return menu
     
