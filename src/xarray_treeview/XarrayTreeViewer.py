@@ -36,7 +36,7 @@ class XarrayTreeViewer(QSplitter):
         self.addWidget(self.metadata_tabs)
 
         self._data_view.selectionWasChanged.connect(self._on_selection_changed)
-        self._data_view.finishedEditingAttrs.connect(self._on_selection_changed)
+        self._data_view.sigFinishedEditingAttrs.connect(self._on_selection_changed)
     
     def view(self) -> XarrayTreeView:
         return self._data_view

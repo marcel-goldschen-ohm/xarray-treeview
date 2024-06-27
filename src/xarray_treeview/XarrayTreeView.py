@@ -13,7 +13,7 @@ from xarray_treeview import XarrayTreeItem, XarrayTreeModel
 
 class XarrayTreeView(TreeView):
 
-    finishedEditingAttrs = Signal()
+    sigFinishedEditingAttrs = Signal()
 
     def __init__(self, parent: QObject = None) -> None:
         TreeView.__init__(self, parent)
@@ -167,7 +167,7 @@ class XarrayTreeView(TreeView):
         elif item.is_var() or item.is_coord():
             item.node[item.key].attrs = attrs
         
-        self.finishedEditingAttrs.emit()
+        self.sigFinishedEditingAttrs.emit()
     
     def popupItemInfo(self, item: XarrayTreeItem):
         if item.is_node():
