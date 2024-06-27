@@ -12,6 +12,8 @@ from xarray_treeview import XarrayTreeItem
 
 
 class XarrayTreeModel(AbstractTreeModel):
+
+    sigNodeNameChanged = Signal()
     
     def __init__(self, root: XarrayTreeItem, parent: QObject = None):
         AbstractTreeModel.__init__(self, root, parent)
@@ -123,6 +125,8 @@ class XarrayTreeModel(AbstractTreeModel):
                                 self.dataChanged.emit(_index, _index)
                         return True
             success: bool = item.set_data(index.column(), value)
+            if success and item.is_node():
+                self.sigNodeNameChanged.emit()
             return success
         return False
     
