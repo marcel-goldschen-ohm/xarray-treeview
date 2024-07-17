@@ -14,11 +14,14 @@ Requires a PyQt package. Should work with PySide6, PyQt6, or PyQt5.
 ```shell
 pip install PySide6
 ```
-Install latest release version:
+<!-- Install latest release version:
 ```shell
 pip install xarray-treeview
 ```
-Or install latest development version:
+Or install latest development version: -->
+*Currently you must install direclty from the repo due to a dependency on another repo. Hopefully in the future you will be able to install from PyPI.*
+
+Install latest development version:
 ```shell
 pip install xarray-treeview@git+https://github.com/marcel-goldschen-ohm/xarray-treeview
 ```
