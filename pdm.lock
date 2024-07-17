@@ -2,10 +2,10 @@
 # It is not intended for manual editing.
 
 [metadata]
-groups = ["default", "lint", "test"]
+groups = ["default", "dev", "lint", "test"]
 strategy = ["cross_platform", "inherit_metadata"]
 lock_version = "4.4.2"
-content_hash = "sha256:594b5ec97cd5091036e11b23c75f0250063435dae28dd4c107962815c7f89e8f"
+content_hash = "sha256:2be82d65f0f36e0cb52d52ef056a4544215eac205de9aa1c0bf2cb5909bebd32"
 
 [[package]]
 name = "colorama"
@@ -181,7 +181,7 @@ name = "numpy"
 version = "1.26.4"
 requires_python = ">=3.9"
 summary = "Fundamental package for array computing in Python"
-groups = ["default"]
+groups = ["default", "dev"]
 files = [
     {file = "numpy-1.26.4-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:9ff0f4f29c51e2803569d7a51c2304de5554655a60c5d776e35b4a41413830d0"},
     {file = "numpy-1.26.4-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:2e4ee3380d6de9c9ec04745830fd9e2eccb3e6cf790d39d7b98ffd19b0dd754a"},
@@ -226,7 +226,7 @@ name = "packaging"
 version = "24.1"
 requires_python = ">=3.8"
 summary = "Core utilities for Python packages"
-groups = ["default", "test"]
+groups = ["default", "dev", "test"]
 files = [
     {file = "packaging-24.1-py3-none-any.whl", hash = "sha256:5b8f2217dbdbd2f7f384c41c628544e6d52f2d0f53c6d0c3ea61aa5d1d7ff124"},
     {file = "packaging-24.1.tar.gz", hash = "sha256:026ed72c8ed3fcce5bf8950572258698927fd1dbda10a5e981cdf0ac37f4f002"},
@@ -313,18 +313,16 @@ files = [
 
 [[package]]
 name = "pyqt-ext"
-version = "1.2.7"
+version = "1.2.8.dev2"
 requires_python = ">=3.9"
+editable = true
+path = "../pyqt-ext"
 summary = "Collection of PyQt/PySide widgets/tools"
-groups = ["default"]
+groups = ["default", "dev"]
 dependencies = [
     "numpy>=1.26.2",
     "qtawesome>=1.3.0",
     "qtpy>=2.4.1",
-]
-files = [
-    {file = "pyqt_ext-1.2.7-py3-none-any.whl", hash = "sha256:1ac184cd40ee49a861d462113b88df76eddb7dae8662b49c5142a4035937ad94"},
-    {file = "pyqt_ext-1.2.7.tar.gz", hash = "sha256:1f9bc29d9aea5ff879466262483d68525023cd17e0c79c9c8db3b9b98edc63d1"},
 ]
 
 [[package]]
@@ -390,7 +388,7 @@ name = "qtawesome"
 version = "1.3.1"
 requires_python = ">=3.7"
 summary = "FontAwesome icons in PyQt and PySide applications"
-groups = ["default"]
+groups = ["default", "dev"]
 dependencies = [
     "qtpy",
 ]
@@ -404,7 +402,7 @@ name = "qtpy"
 version = "2.4.1"
 requires_python = ">=3.7"
 summary = "Provides an abstraction layer on top of the various Qt bindings (PyQt5/6 and PySide2/6)."
-groups = ["default"]
+groups = ["default", "dev"]
 dependencies = [
     "packaging",
 ]

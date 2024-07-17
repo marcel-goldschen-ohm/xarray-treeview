@@ -44,6 +44,10 @@ source = "scm"
 
 
 [tool.pdm.dev-dependencies]
+# file paths assume local dev packages are in same dir as this package
+dev = [
+    "-e pyqt-ext @ file:///${PROJECT_ROOT}/../pyqt-ext",
+]
 lint = [
     "flake8",
 ]
