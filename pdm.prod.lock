@@ -4,8 +4,11 @@
 [metadata]
 groups = ["default"]
 strategy = ["cross_platform", "inherit_metadata"]
-lock_version = "4.4.2"
-content_hash = "sha256:2be82d65f0f36e0cb52d52ef056a4544215eac205de9aa1c0bf2cb5909bebd32"
+lock_version = "4.5.0"
+content_hash = "sha256:1bdb0439e35daa75bc20874f38f2218b4419573b3de693771a1cbe6780b8a7bf"
+
+[[metadata.targets]]
+requires_python = ">=3.9"
 
 [[package]]
 name = "numpy"
@@ -111,7 +114,7 @@ files = [
 
 [[package]]
 name = "pyqt-ext"
-version = "1.2.7"
+version = "1.2.8"
 requires_python = ">=3.9"
 summary = "Collection of PyQt/PySide widgets/tools"
 groups = ["default"]
@@ -121,8 +124,8 @@ dependencies = [
     "qtpy>=2.4.1",
 ]
 files = [
-    {file = "pyqt_ext-1.2.7-py3-none-any.whl", hash = "sha256:1ac184cd40ee49a861d462113b88df76eddb7dae8662b49c5142a4035937ad94"},
-    {file = "pyqt_ext-1.2.7.tar.gz", hash = "sha256:1f9bc29d9aea5ff879466262483d68525023cd17e0c79c9c8db3b9b98edc63d1"},
+    {file = "pyqt_ext-1.2.8-py3-none-any.whl", hash = "sha256:e7fdb421eb19a8fea728fba4830ebd3c6db2cf4ad0841810150a20346710160a"},
+    {file = "pyqt_ext-1.2.8.tar.gz", hash = "sha256:0bc2f8ccaddf1d3c8cb05f59b2671e81f3f243d2c0563d9fac1ee7b75a1d0540"},
 ]
 
 [[package]]
@@ -201,7 +204,7 @@ files = [
 
 [[package]]
 name = "xarray"
-version = "2024.6.0"
+version = "2024.7.0"
 requires_python = ">=3.9"
 summary = "N-D labeled arrays and datasets in Python"
 groups = ["default"]
@@ -211,8 +214,8 @@ dependencies = [
     "pandas>=2.0",
 ]
 files = [
-    {file = "xarray-2024.6.0-py3-none-any.whl", hash = "sha256:721a7394e8ec3d592b2d8ebe21eed074ac077dc1bb1bd777ce00e41700b4866c"},
-    {file = "xarray-2024.6.0.tar.gz", hash = "sha256:0b91e0bc4dc0296947947640fe31ec6e867ce258d2f7cbc10bedf4a6d68340c7"},
+    {file = "xarray-2024.7.0-py3-none-any.whl", hash = "sha256:1b0fd51ec408474aa1f4a355d75c00cc1c02bd425d97b2c2e551fd21810e7f64"},
+    {file = "xarray-2024.7.0.tar.gz", hash = "sha256:4cae512d121a8522d41e66d942fb06c526bc1fd32c2c181d5fe62fe65b671638"},
 ]
 
 [[package]]

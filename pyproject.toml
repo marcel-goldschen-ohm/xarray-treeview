@@ -16,7 +16,7 @@ dependencies = [
     "xarray>=2023.12.0",
     "qtpy>=2.4.1",
     "qtawesome>=1.3.0",
-    "pyqt-ext>=1.2.7",
+    "pyqt-ext>=1.2.8",
     "xarray-datatree @ git+https://github.com/marcel-goldschen-ohm/datatree",
 ]
 readme = "README.md"
