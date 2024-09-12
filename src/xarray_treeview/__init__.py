@@ -1,4 +1,3 @@
-from xarray_treeview.XarrayTreeItem import XarrayTreeItem
 from xarray_treeview.XarrayTreeModel import XarrayTreeModel, XarrayDndTreeModel
 from xarray_treeview.XarrayTreeView import XarrayTreeView
 from xarray_treeview.XarrayTreeViewer import XarrayTreeViewer

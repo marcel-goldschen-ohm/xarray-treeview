@@ -7,8 +7,8 @@ from qtpy.QtGui import *
 from qtpy.QtWidgets import *
 import xarray as xr
 from datatree import DataTree
-from pyqt_ext.tree import AbstractTreeItem, KeyValueTreeItem, KeyValueTreeModel, KeyValueTreeView
-from xarray_treeview import XarrayTreeModel, XarrayTreeView
+from pyqt_ext.tree import KeyValueTreeItem, KeyValueTreeModel, KeyValueTreeView
+from xarray_treeview import XarrayTreeItem, XarrayTreeModel, XarrayTreeView
 
 
 class XarrayTreeViewer(QSplitter):
@@ -18,8 +18,8 @@ class XarrayTreeViewer(QSplitter):
 
         self._data_view = XarrayTreeView()
         self._data_view.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
-        model = XarrayTreeModel()
-        model.setDetailsColumnVisible(False)
+        model = XarrayTreeModel(None)
+        model.setShowDetailsColumn(False)
         self._data_view.setModel(model)
 
         self._info_view = QTextEdit()
@@ -43,28 +43,23 @@ class XarrayTreeViewer(QSplitter):
     
     def _on_selection_changed(self) -> None:
         selected_items = self._data_view.selectedItems()
-        model: XarrayTreeModel = self._data_view.model()
-        dt: DataTree = model.dataTree()
-        if (model is None) or (dt is None) or len(selected_items) > 1:
+        
+        if len(selected_items) == 0:
+            item: XarrayTreeItem = self._data_view.model().root()
+        elif len(selected_items) == 1:
+            item: XarrayTreeItem = selected_items[0]
+        else:
             # clear tabs
             self._info_view.clear()
             self._attrs_view.setModel(None)
             return
-        
-        # single selected item
-        if len(selected_items) == 0:
-            item: AbstractTreeItem = self._data_view.model().root()
-        elif len(selected_items) == 1:
-            item: AbstractTreeItem = selected_items[0]
 
-        path: str = model.pathFromItem(item)
-        obj: DataTree | xr.DataArray = dt[path]
-        if isinstance(obj, DataTree):
-            text = str(obj.ds)
-            attrs = obj.attrs
-        elif isinstance(obj, xr.DataArray):
-            text = str(obj)
-            attrs = obj.attrs
+        if item.is_node():
+            text = str(item.node.ds)
+            attrs = item.node.attrs
+        elif item.is_var() or item.is_coord():
+            text = str(item.node[item.key])
+            attrs = item.node[item.key].attrs
         else:
             text = ''
             attrs = None
@@ -114,10 +109,13 @@ def test_live():
     baselined_node = DataTree(name='baselined', data=baselined_ds, parent=raw_node)
     scaled_node = DataTree(name='scaled', data=scaled_ds, parent=baselined_node)
     # print('-----\n', root_node.to_datatree())
+
+    root_item = XarrayTreeItem(root_node)
     
     viewer = XarrayTreeViewer()
     view = viewer.view()
-    model = XarrayDndTreeModel(dt=root_node)
+    model = XarrayDndTreeModel(root_item)
+    model.setShowDetailsColumn(False)
     view.setModel(model)
     view.setAlternatingRowColors(False)
     viewer.show()
