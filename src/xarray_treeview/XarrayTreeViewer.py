@@ -26,6 +26,7 @@ class XarrayTreeViewer(QSplitter):
         self._info_view.setReadOnly(True)
 
         self._attrs_view = KeyValueTreeView()
+        self._attrs_view.setAlternatingRowColors(True)
         self._attrs_view.setModel(KeyValueTreeModel())
 
         self.metadata_tabs = QTabWidget()
@@ -119,7 +120,6 @@ def test_live():
     view = viewer.view()
     model = XarrayDndTreeModel(dt=root_node)
     view.setModel(model)
-    view.setAlternatingRowColors(False)
     viewer.show()
     viewer.resize(QSize(400, 600))
     viewer.setSizes([300, 300])

@@ -25,18 +25,18 @@ class XarrayTreeView(TreeView):
         self._showVarsAction = QAction('Show Vars')
         self._showVarsAction.setCheckable(True)
         self._showVarsAction.setChecked(True)
-        self._showVarsAction.triggered.connect(self.updateModel)
+        self._showVarsAction.triggered.connect(self.refresh)
 
         self._showCoordsAction = QAction('Show Coords')
         self._showCoordsAction.setCheckable(True)
         self._showCoordsAction.setChecked(True)
-        self._showCoordsAction.triggered.connect(self.updateModel)
+        self._showCoordsAction.triggered.connect(self.refresh)
 
         # optional details column
         self._showDetailsColumnAction = QAction('Show Details Column')
         self._showDetailsColumnAction.setCheckable(True)
         self._showDetailsColumnAction.setChecked(False)
-        self._showDetailsColumnAction.triggered.connect(self.updateModel)
+        self._showDetailsColumnAction.triggered.connect(self.refresh)
 
         # these will appear in the item's context menu
         self._itemContextMenuFunctions: list[tuple[str, Callable[[AbstractTreeItem]]]] = [
@@ -46,21 +46,31 @@ class XarrayTreeView(TreeView):
             ('Remove', lambda item, self=self: self.askToRemoveItem(item)),
         ]
     
-    def setModel(self, model: XarrayTreeModel):
-        TreeView.setModel(self, model)
-        self.updateModel()
-    
-    def updateModel(self):
-        model: XarrayTreeModel = self.model()
-        if model is None:
-            return
+    def setDataTree(self, dt: DataTree):
         show_vars = self._showVarsAction.isChecked()
         show_coords = self._showCoordsAction.isChecked()
         show_details = self._showDetailsColumnAction.isChecked()
+        model: XarrayTreeModel = self.model()
+        if model is None:
+            model = XarrayTreeModel()
+            TreeView.setModel(self, model)
         self.storeState()
-        model.setDataTree(model.dataTree(), include_vars=show_vars, include_coords=show_coords)
+        model.setDataTree(dt, include_vars=show_vars, include_coords=show_coords)
         model.setDetailsColumnVisible(show_details)
         self.restoreState()
+    
+    def refresh(self):
+        model: XarrayTreeModel = self.model()
+        if model is None:
+            return
+        dt: DataTree | None = model.dataTree()
+        if dt is None:
+            return
+        self.setDataTree(dt)
+    
+    def setModel(self, model: XarrayTreeModel):
+        TreeView.setModel(self, model)
+        self.refresh()
     
     def contextMenu(self, index: QModelIndex = QModelIndex()) -> QMenu:
         menu: QMenu = TreeView.contextMenu(self, index)
@@ -70,7 +80,7 @@ class XarrayTreeView(TreeView):
         menu.addAction(self._showCoordsAction)
         menu.addAction(self._showDetailsColumnAction)
         menu.addSeparator()
-        menu.addAction('Refresh', self.updateModel)
+        menu.addAction('Refresh', self.refresh)
 
         return menu
     
@@ -135,6 +145,20 @@ class XarrayTreeView(TreeView):
         obj.attrs = attrs
         
         self.sigFinishedEditingAttrs.emit()
+    
+    def isVariablesVisible(self) -> bool:
+        return self._showVarsAction.isChecked()
+    
+    def setVariablesVisible(self, visible: bool):
+        self._showVarsAction.setChecked(visible)
+        self.refresh()
+    
+    def isCoordinatesVisible(self) -> bool:
+        return self._showCoordsAction.isChecked()
+    
+    def setCoordinatesVisible(self, visible: bool):
+        self._showCoordsAction.setChecked(visible)
+        self.refresh()
 
 
 def test_live():
