@@ -8,12 +8,11 @@ from qtpy.QtWidgets import *
 import qtawesome as qta
 from pyqt_ext.tree import AbstractTreeItem, AbstractTreeModel
 import xarray as xr
-from datatree import DataTree
 
 
 class XarrayTreeModel(AbstractTreeModel):
     
-    def __init__(self, dt: DataTree = None, parent: QObject = None):
+    def __init__(self, dt: xr.DataTree = None, parent: QObject = None):
         AbstractTreeModel.__init__(self, parent=parent)
 
         # optional details column
@@ -25,10 +24,10 @@ class XarrayTreeModel(AbstractTreeModel):
         # set data tree
         self.setDataTree(dt)
     
-    def dataTree(self) -> DataTree | None:
+    def dataTree(self) -> xr.DataTree | None:
         return getattr(self, '_dataTree', None)
     
-    def setDataTree(self, dt: DataTree | None, include_vars: bool = True, include_coords: bool = True) -> None:
+    def setDataTree(self, dt: xr.DataTree | None, include_vars: bool = True, include_coords: bool = True) -> None:
         self._dataTree = dt
         if dt is None:
             root = AbstractTreeItem()
@@ -56,15 +55,15 @@ class XarrayTreeModel(AbstractTreeModel):
     def dataTypeAtPath(self, path: str) -> str | None:
         """ Get the data type associated with path.
         """
-        dt: DataTree | None = self.dataTree()
+        dt: xr.DataTree | None = self.dataTree()
         if dt is None:
             return
-        obj: DataTree | xr.DataArray | None = dt[path]
-        if isinstance(obj, DataTree):
+        obj: xr.DataTree | xr.DataArray | None = dt[path]
+        if isinstance(obj, xr.DataTree):
             return 'node'
         if isinstance(obj, xr.DataArray):
             parent_path = '/'.join(path.rstrip('/').split('/')[:-1])
-            node: DataTree = dt[parent_path]
+            node: xr.DataTree = dt[parent_path]
             if node is not None:
                 if obj.name in list(node.ds.data_vars):
                     return 'var'
@@ -108,7 +107,7 @@ class XarrayTreeModel(AbstractTreeModel):
     def data(self, index: QModelIndex, role: int):
         if not index.isValid():
             return
-        dt: DataTree | None = self.dataTree()
+        dt: xr.DataTree | None = self.dataTree()
         if role == Qt.ItemDataRole.DisplayRole or role == Qt.ItemDataRole.EditRole:
             item: AbstractTreeItem = self.itemFromIndex(index)
             if index.column() == 0:
@@ -165,13 +164,13 @@ class XarrayTreeModel(AbstractTreeModel):
                     return False
                 path: str = self.pathFromIndex(index)
                 data_type: str | None = self.dataTypeAtPath(path)
-                dt: DataTree | None = self.dataTree()
+                dt: xr.DataTree | None = self.dataTree()
                 if dt is None:
                     return False
                 if data_type == 'node':
                     # rename node
-                    node: DataTree = dt[path]
-                    parent_node: DataTree = node.parent
+                    node: xr.DataTree = dt[path]
+                    parent_node: xr.DataTree = node.parent
                     node.orphan()
                     node.name = new_name
                     node.parent = parent_node
@@ -196,16 +195,16 @@ class XarrayTreeModel(AbstractTreeModel):
         success: bool = AbstractTreeModel.removeRows(self, row, count, parent_index)
         if success:
             # remove data
-            dt: DataTree = self.dataTree()
+            dt: xr.DataTree = self.dataTree()
             if dt is not None:
                 for path in paths_to_remove:
-                    obj: DataTree | xr.DataArray = dt[path]
-                    if isinstance(obj, DataTree):
+                    obj: xr.DataTree | xr.DataArray = dt[path]
+                    if isinstance(obj, xr.DataTree):
                         obj.orphan()
                     elif isinstance(obj, xr.DataArray):
                         obj_name = path.rstrip('/').split('/')[-1]
                         parent_path = '/'.join(path.rstrip('/').split('/')[:-1])
-                        node: DataTree = dt[parent_path]
+                        node: xr.DataTree = dt[parent_path]
                         node.ds = node.to_dataset().drop_vars(obj_name)
         return success
     
@@ -222,8 +221,8 @@ class XarrayTreeModel(AbstractTreeModel):
         if dst_parent_dtype != 'node':
             raise ValueError('Destination parent must be a node.')
         
-        src_node: DataTree = dt[src_path]
-        dst_parent_node: DataTree = dt[dst_parent_path]
+        src_node: xr.DataTree = dt[src_path]
+        dst_parent_node: xr.DataTree = dt[dst_parent_path]
 
         if src_parent_index != dst_parent_index:
             # If we are not rearranging children within the same parent node,
@@ -269,15 +268,12 @@ class XarrayDndTreeModel(XarrayTreeModel):
 
 def test_model():
     print('\nDataTree...')
-    ds = xr.tutorial.load_dataset('air_temperature')
-    dt = DataTree(name='root')
-    child1 = DataTree(name='child1', data=ds, parent=dt)
-    child2 = DataTree(name='child2', parent=dt)
-    child3 = DataTree(name='child3', parent=dt)
-    grandchild1 = DataTree(name='grandchild1', parent=child3)
-    grandchild2 = DataTree(name='grandchild2', parent=child3)
-    greatgrandchild1 = DataTree(name='greatgrandchild1', parent=grandchild1)
-    greatgrandchild2 = DataTree(name='greatgrandchild2', parent=grandchild1)
+    dt = xr.DataTree(name='root')
+    dt['child1'] = xr.tutorial.load_dataset('air_temperature')
+    dt['child2'] = xr.DataTree()
+    dt['child3/grandchild1/greatgrandchild1'] = xr.DataTree()
+    dt['child3/grandchild1/greatgrandchild2'] = xr.DataTree()
+    dt['child3/grandchild2'] = xr.DataTree()
     print(dt)
 
     print('\nXarrayTreeModel...')

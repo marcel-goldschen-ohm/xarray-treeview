@@ -6,7 +6,6 @@ from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
 import xarray as xr
-from datatree import DataTree
 from pyqt_ext.tree import AbstractTreeItem, KeyValueTreeItem, KeyValueTreeModel, KeyValueTreeView
 from xarray_treeview import XarrayTreeModel, XarrayTreeView
 
@@ -60,7 +59,7 @@ class XarrayTreeViewer(QSplitter):
 
         path: str = model.pathFromItem(item)
         obj: DataTree | xr.DataArray = dt[path]
-        if isinstance(obj, DataTree):
+        if isinstance(obj, xr.DataTree):
             text = str(obj.ds)
             attrs = obj.attrs
         elif isinstance(obj, xr.DataArray):
@@ -99,26 +98,26 @@ def test_live():
     )
     # print('-----\n baselined_ds', baselined_ds)
 
-    scaled_ds = xr.Dataset(
-        data_vars={
-            'current': (['series', 'sweep', 'time'], np.random.rand(1, 2, 100) * 1e-9, {'units': 'A'}),
-        },
-        coords={
-            'series': ('series', [1]),
-            'sweep': ('sweep', [5,8]),
-        },
-    )
+    # scaled_ds = xr.Dataset(
+    #     data_vars={
+    #         'current': (['series', 'sweep', 'time'], np.random.rand(1, 2, 100) * 1e-9, {'units': 'A'}),
+    #     },
+    #     coords={
+    #         'series': ('series', [1]),
+    #         'sweep': ('sweep', [5,8]),
+    #     },
+    # )
     # print('-----\n scaled_ds', scaled_ds)
     
-    root_node = DataTree(name='root')
-    raw_node = DataTree(name='raw', data=raw_ds, parent=root_node)
-    baselined_node = DataTree(name='baselined', data=baselined_ds, parent=raw_node)
-    scaled_node = DataTree(name='scaled', data=scaled_ds, parent=baselined_node)
+    dt = xr.DataTree(name='root')
+    dt['raw'] = raw_ds
+    dt['raw/baselined'] = baselined_ds
+    # dt['raw/baselined/scaled'] = scaled_ds
     # print('-----\n', root_node.to_datatree())
     
     viewer = XarrayTreeViewer()
     view = viewer.view()
-    model = XarrayDndTreeModel(dt=root_node)
+    model = XarrayDndTreeModel(dt=dt)
     view.setModel(model)
     viewer.show()
     viewer.resize(QSize(400, 600))

@@ -7,7 +7,6 @@ from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
 import xarray as xr
-from datatree import DataTree
 from pyqt_ext.tree import AbstractTreeItem, TreeView, KeyValueTreeItem, KeyValueTreeModel, KeyValueTreeView
 from xarray_treeview import XarrayTreeModel
 
@@ -46,7 +45,7 @@ class XarrayTreeView(TreeView):
             ('Remove', lambda item, self=self: self.askToRemoveItem(item)),
         ]
     
-    def setDataTree(self, dt: DataTree):
+    def setDataTree(self, dt: xr.DataTree):
         show_vars = self._showVarsAction.isChecked()
         show_coords = self._showCoordsAction.isChecked()
         show_details = self._showDetailsColumnAction.isChecked()
@@ -63,7 +62,7 @@ class XarrayTreeView(TreeView):
         model: XarrayTreeModel = self.model()
         if model is None:
             return
-        dt: DataTree | None = model.dataTree()
+        dt: xr.DataTree | None = model.dataTree()
         if dt is None:
             return
         self.setDataTree(dt)
@@ -88,7 +87,7 @@ class XarrayTreeView(TreeView):
         model: XarrayTreeModel = self.model()
         if model is None:
             return
-        dt: DataTree | None = model.dataTree()
+        dt: xr.DataTree | None = model.dataTree()
         if dt is None:
             return
         path: str = model.pathFromItem(item)
@@ -110,7 +109,7 @@ class XarrayTreeView(TreeView):
         model: XarrayTreeModel = self.model()
         if model is None:
             return
-        dt: DataTree | None = model.dataTree()
+        dt: xr.DataTree | None = model.dataTree()
         if dt is None:
             return
         path: str = model.pathFromItem(item)
@@ -184,24 +183,24 @@ def test_live():
     )
     # print('-----\n baselined_ds', baselined_ds)
 
-    scaled_ds = xr.Dataset(
-        data_vars={
-            'current': (['series', 'sweep', 'time'], np.random.rand(1, 2, 100) * 1e-9, {'units': 'A'}),
-        },
-        coords={
-            'series': ('series', [1]),
-            'sweep': ('sweep', [5,8]),
-        },
-    )
+    # scaled_ds = xr.Dataset(
+    #     data_vars={
+    #         'current': (['series', 'sweep', 'time'], np.random.rand(1, 2, 100) * 1e-9, {'units': 'A'}),
+    #     },
+    #     coords={
+    #         'series': ('series', [1]),
+    #         'sweep': ('sweep', [5,8]),
+    #     },
+    # )
     # print('-----\n scaled_ds', scaled_ds)
     
-    root_node = DataTree(name='root')
-    raw_node = DataTree(name='raw', data=raw_ds, parent=root_node)
-    baselined_node = DataTree(name='baselined', data=baselined_ds, parent=raw_node)
-    scaled_node = DataTree(name='scaled', data=scaled_ds, parent=baselined_node)
+    dt = xr.DataTree(name='root')
+    dt['raw'] = raw_ds
+    dt['raw/baselined'] = baselined_ds
+    # dt['raw/baselined/scaled'] = scaled_ds
     # print('-----\n', root_node.to_datatree())
 
-    model = XarrayDndTreeModel(dt=root_node)
+    model = XarrayDndTreeModel(dt=dt)
     view = XarrayTreeView()
     view.setSelectionMode(QAbstractItemView.ExtendedSelection)
     view.setModel(model)
